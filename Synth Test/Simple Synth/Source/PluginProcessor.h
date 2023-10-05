@@ -60,10 +60,24 @@ private:
 
 	juce::AudioParameterFloat* pitch;
 	juce::AudioParameterFloat* gain;
+	juce::AudioParameterFloat* fmA;
+	juce::AudioParameterFloat* fmMod;
 
-	float lfoPhase;
-	float lfoStep;
+	float lfoPhase {0.f};
+	float lfoStep {0.f};
 
+	float lfoM1Phase {0.f};
+	float lfoM1Step {0.f};
+
+	float lfoM2Phase {0.f};
+	float lfoM2Step {0.f};
+
+	float S{0.f};
+	float I1{0.f};
+	float I2{0.f};
+
+	juce::ADSR adsr;
+	int adsrResetCounter {0};
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SimpleSynthAudioProcessor)
 };

@@ -24,12 +24,22 @@ SimpleSynthAudioProcessor::SimpleSynthAudioProcessor()
 {
 	// DEFINE AND ADD PARAMETERS - NEEDED FOR DEBUGGING PURPOSES
 	addParameter (gain = new juce::AudioParameterFloat ({ "gain", 1 }, "Gain", 0.0f, 1.0f, 0.f));
+
+	addParameter (fmA = new juce::AudioParameterFloat ({ "amplitude", 1 }, "FM Index", 0.0f, 1.0f, 0.f));
+
 	addParameter (pitch = new juce::AudioParameterFloat({ "pitch", 1 },
 														"Pitch",
 														{ 16.35f, 7902.13f, 0.f, 0.199f },
 														440.f,
 														juce::AudioParameterFloatAttributes().withLabel(juce::String("Hz"))));
 
+	addParameter (fmMod = new juce::AudioParameterFloat({ "fm", 1 },
+														"FM Mod",
+														{ 16.35f, 7902.13f, 0.f, 0.199f },
+														440.f,
+														juce::AudioParameterFloatAttributes().withLabel(juce::String("Hz"))));
+
+	adsr.setParameters({0.1, 1.8, 0.5, 0.1});
 }
 
 void SimpleSynthAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
@@ -49,15 +59,30 @@ void SimpleSynthAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 	// TODO: Polyphony volume - how to concat sin waves in a smart way
 
 	// GET CONSTANTS SAMPLE RATE AND BUFFER LENGTH
-	float sampleRate = getSampleRate();
-	float bufferLength = buffer.getNumSamples();
+	const float sampleRate = getSampleRate();
+	const float bufferLength = buffer.getNumSamples();
 
 	// CALCULATE LFO PHASE CHANGE PER SAMPLE
-	lfoStep = pitch->get() / sampleRate;
+	const auto fc = pitch->get();
+	const auto lnfc = log(fc);
+
+	S = fc * 0.005;
+	I1 = 17 * (8 - lnfc)/ (lnfc * lnfc);
+	I2 = 20 * (8 - lnfc)/ fc;
+
+	lfoStep = fc / sampleRate;
+	lfoM1Step = (fc + S) / sampleRate;
+	lfoM2Step = (fc * 4.f + S) / sampleRate;
 
 	// GET BOTH CHANNELS
 	auto* leftChannel = buffer.getWritePointer(0);
 	auto* rightChannel = buffer.getWritePointer(1);
+
+	// e = A(t)sin[2*pi*fc*t + I1 * sin(2*pi*(fm1+S)*t) + I2 * sin(2*pi*(fm2+S)t)]
+	// S = fc / 200;
+	// I1 = 17*(8-ln(fc)) / (ln(fc))^2;
+	// I2 = 20*(8-ln(fc)) / fc;
+	// fc:fm1:fm2 == 1:1:4
 
 	for(auto i = 0; i < bufferLength; i++) {
 		lfoPhase += lfoStep;	// for each sample increment the phase
@@ -66,13 +91,35 @@ void SimpleSynthAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 			lfoPhase -= 1;
 		}
 
+		lfoM1Phase += lfoM1Step;	// for each sample increment the phase
+
+		if(lfoM1Phase > 1) { //	 modulo - we always want values between 0 and 1
+			lfoM1Phase -= 1;
+		}
+
+		lfoM2Phase += lfoM2Step;	// for each sample increment the phase
+
+		if(lfoM2Phase > 1) { //	 modulo - we always want values between 0 and 1
+			lfoM2Phase -= 1;
+		}
+
 		// calculate current sinusoid value and multiply it by desired gain
-		auto output = sin(juce::MathConstants<float>::twoPi * lfoPhase) * gain->get();
+		const auto sinM1 = sin(juce::MathConstants<float>::twoPi * lfoM1Phase);
+		const auto sinM2 = sin(juce::MathConstants<float>::twoPi * lfoM2Phase);
+		auto output = gain->get() * sin(juce::MathConstants<float>::twoPi * lfoPhase + I1 * sinM1 + I2 * sinM2);
 
 		// write the result to output buffer
 		leftChannel[i] = output;
 		rightChannel[i] = output;
+
+		adsrResetCounter--;
+		if (adsrResetCounter <= 0) {
+			adsrResetCounter = 44100 * 2;
+			adsr.noteOn();
+		}
 	}
+
+	adsr.applyEnvelopeToBuffer(buffer, 0, bufferLength);
 }
 
 
@@ -146,6 +193,7 @@ void SimpleSynthAudioProcessor::prepareToPlay (double sampleRate, int samplesPer
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
+	adsr.setSampleRate(sampleRate);
 }
 
 void SimpleSynthAudioProcessor::releaseResources()
