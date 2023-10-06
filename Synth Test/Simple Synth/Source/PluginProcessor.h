@@ -58,10 +58,19 @@ public:
 
 private:
 
+    struct HarmonyRatio {
+        float numerator;
+        float denominator;
+    };
+
 	juce::AudioParameterFloat* pitch;
 	juce::AudioParameterFloat* gain;
-	juce::AudioParameterFloat* fmA;
-	juce::AudioParameterFloat* fmMod;
+
+    juce::AudioParameterBool* fifth;
+    juce::AudioParameterBool* fourth;
+    juce::AudioParameterBool* third;
+    juce::AudioParameterBool* thirdMinor;
+    juce::AudioParameterBool* octave;
 
 	float lfoPhase {0.f};
 	float lfoStep {0.f};
@@ -78,6 +87,11 @@ private:
 
 	juce::ADSR adsr;
 	int adsrResetCounter {0};
+
+    float calculateHarmonyFrequency(const float baseFrequency, const HarmonyRatio& ratio) const;
+    float getFMPianoValue(const float baseFrequency, const float sampleRate);
+
+
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SimpleSynthAudioProcessor)
 };

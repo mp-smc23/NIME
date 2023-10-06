@@ -25,19 +25,17 @@ SimpleSynthAudioProcessor::SimpleSynthAudioProcessor()
 	// DEFINE AND ADD PARAMETERS - NEEDED FOR DEBUGGING PURPOSES
 	addParameter (gain = new juce::AudioParameterFloat ({ "gain", 1 }, "Gain", 0.0f, 1.0f, 0.f));
 
-	addParameter (fmA = new juce::AudioParameterFloat ({ "amplitude", 1 }, "FM Index", 0.0f, 1.0f, 0.f));
-
 	addParameter (pitch = new juce::AudioParameterFloat({ "pitch", 1 },
 														"Pitch",
 														{ 16.35f, 7902.13f, 0.f, 0.199f },
 														440.f,
 														juce::AudioParameterFloatAttributes().withLabel(juce::String("Hz"))));
 
-	addParameter (fmMod = new juce::AudioParameterFloat({ "fm", 1 },
-														"FM Mod",
-														{ 16.35f, 7902.13f, 0.f, 0.199f },
-														440.f,
-														juce::AudioParameterFloatAttributes().withLabel(juce::String("Hz"))));
+	addParameter(fifth = new juce::AudioParameterBool({ "fifth", 1 }, "5th", false));
+	addParameter(fourth = new juce::AudioParameterBool({ "fourth", 1 }, "4th", false));
+	addParameter(third = new juce::AudioParameterBool({ "third", 1 }, "3rd", false));
+	addParameter(thirdMinor = new juce::AudioParameterBool({ "thirdMinor", 1 }, "3rd Minor", false));
+	addParameter(octave = new juce::AudioParameterBool({ "octave", 1 }, "Octave", false));
 
 	adsr.setParameters({0.1, 1.8, 0.5, 0.1});
 }
@@ -57,6 +55,8 @@ void SimpleSynthAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 	// TODO: Mapping of sensor input to log scale since frequencies are stupid
 	// TODO: Polyphony calculation
 	// TODO: Polyphony volume - how to concat sin waves in a smart way
+	// TODO: volumne of the intervals, diff frequencies are perceived as diff volumes
+	// TODO: 
 
 	// GET CONSTANTS SAMPLE RATE AND BUFFER LENGTH
 	const float sampleRate = getSampleRate();
@@ -120,6 +120,35 @@ void SimpleSynthAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 	}
 
 	adsr.applyEnvelopeToBuffer(buffer, 0, bufferLength);
+}
+
+float SimpleSynthAudioProcessor::calculateHarmonyFrequency(const float baseFrequency, const HarmonyRatio& ratio) const {
+	return baseFrequency * ratio.numerator / ratio.denominator;
+}
+
+float SimpleSynthAudioProcessor::getFMPianoValue(const float baseFrequency, const float sampleRate) {
+	// TODO: make class out of it
+	const auto fc = pitch->get();
+	const auto lnfc = log(fc);
+
+	auto S = fc * 0.005;
+	auto I1 = 17 * (8 - lnfc) / (lnfc * lnfc);
+	auto I2 = 20 * (8 - lnfc) / fc;
+
+	auto lfoStep = fc / sampleRate;
+	auto lfoM1Step = (fc + S) / sampleRate;
+	auto lfoM2Step = (fc * 4.f + S) / sampleRate;
+
+	lfoPhase += lfoStep;	// for each sample increment the phase
+
+	if (lfoPhase > 1) { // modulo - we always want values between 0 and 1
+		lfoPhase -= 1;
+	}
+
+	const auto sinM1 = sin(juce::MathConstants<float>::twoPi * lfoM1Phase);
+	const auto sinM2 = sin(juce::MathConstants<float>::twoPi * lfoM2Phase);
+	auto output = gain->get() * sin(juce::MathConstants<float>::twoPi * lfoPhase + I1 * sinM1 + I2 * sinM2);
+
 }
 
 
