@@ -9,6 +9,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "FM/SinusoidSynth.h"
 
 //==============================================================================
 /**
@@ -72,24 +73,31 @@ private:
     juce::AudioParameterBool* thirdMinor;
     juce::AudioParameterBool* octave;
 
-	float lfoPhase {0.f};
-	float lfoStep {0.f};
+	std::unique_ptr<SinusoidSynth> mainSynth;
+	std::unique_ptr<SinusoidSynth> fifthSynth;
+	std::unique_ptr<SinusoidSynth> fourthSynth;
+	std::unique_ptr<SinusoidSynth> thirdSynth;
+	std::unique_ptr<SinusoidSynth> thirdMinorSynth;
+	std::unique_ptr<SinusoidSynth> octaveSynth;
 
-	float lfoM1Phase {0.f};
-	float lfoM1Step {0.f};
+	float curPitch{0.f};
+	bool isFifthOn{false};
+	bool isFourthOn{false};
+	bool isThirdOn{false};
+	bool isThirdMinorOn{false};
+	bool isOctaveOn{false};
 
-	float lfoM2Phase {0.f};
-	float lfoM2Step {0.f};
-
-	float S{0.f};
-	float I1{0.f};
-	float I2{0.f};
+	HarmonyRatio fifthRatio{3.f, 2.f};
+	HarmonyRatio fourthRatio{4.f, 3.f};
+	HarmonyRatio thirdRatio{5.f, 4.f};
+	HarmonyRatio thirdMinorRatio{6.f, 5.f};
+	HarmonyRatio octaveRatio{2.f, 1.f};
 
 	juce::ADSR adsr;
 	int adsrResetCounter {0};
 
+	void prepareSideSynth(const std::unique_ptr<SinusoidSynth>& synth, const HarmonyRatio& ratio, bool& state, const bool isOn);
     float calculateHarmonyFrequency(const float baseFrequency, const HarmonyRatio& ratio) const;
-    float getFMPianoValue(const float baseFrequency, const float sampleRate);
 
 
     //==============================================================================

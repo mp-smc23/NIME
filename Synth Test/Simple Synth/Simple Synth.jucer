@@ -5,6 +5,13 @@
               pluginFormats="buildAU,buildStandalone,buildVST,buildVST3">
   <MAINGROUP id="C456n1" name="Simple Synth">
     <GROUP id="{AAA7B214-AFDC-2238-C59B-F54F6915C863}" name="Source">
+      <GROUP id="{5410774C-BD7B-7EEA-4DF1-4065EDF8DD6F}" name="FM">
+        <FILE id="mqfRi9" name="Oscillator.cpp" compile="1" resource="0" file="Source/FM/Oscillator.cpp"/>
+        <FILE id="UW5Ivt" name="Oscillator.h" compile="0" resource="0" file="Source/FM/Oscillator.h"/>
+        <FILE id="jCEb4p" name="SinusoidSynth.cpp" compile="1" resource="0"
+              file="Source/FM/SinusoidSynth.cpp"/>
+        <FILE id="lndC8T" name="SinusoidSynth.h" compile="0" resource="0" file="Source/FM/SinusoidSynth.h"/>
+      </GROUP>
       <FILE id="YlMVge" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="AINwAE" name="PluginProcessor.h" compile="0" resource="0"

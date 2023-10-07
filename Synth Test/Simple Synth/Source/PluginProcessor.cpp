@@ -22,6 +22,13 @@ SimpleSynthAudioProcessor::SimpleSynthAudioProcessor()
                        )
 #endif
 {
+	mainSynth = std::make_unique<SinusoidSynth>();
+	fifthSynth = std::make_unique<SinusoidSynth>();
+	fourthSynth = std::make_unique<SinusoidSynth>();
+	thirdSynth = std::make_unique<SinusoidSynth>();
+	thirdMinorSynth = std::make_unique<SinusoidSynth>();
+	octaveSynth = std::make_unique<SinusoidSynth>();
+
 	// DEFINE AND ADD PARAMETERS - NEEDED FOR DEBUGGING PURPOSES
 	addParameter (gain = new juce::AudioParameterFloat ({ "gain", 1 }, "Gain", 0.0f, 1.0f, 0.f));
 
@@ -49,64 +56,41 @@ void SimpleSynthAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 	for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
 		buffer.clear (i, 0, buffer.getNumSamples());
 
-	// =========== Here's where magic starts ===============
+	// =========== Here's where the magic starts ===============
 
 	// TODO: Where smoothing?? - Prob only need for gain smoothing, frequencies seem cool
 	// TODO: Mapping of sensor input to log scale since frequencies are stupid
-	// TODO: Polyphony calculation
 	// TODO: Polyphony volume - how to concat sin waves in a smart way
 	// TODO: volumne of the intervals, diff frequencies are perceived as diff volumes
-	// TODO: 
 
 	// GET CONSTANTS SAMPLE RATE AND BUFFER LENGTH
 	const float sampleRate = getSampleRate();
 	const float bufferLength = buffer.getNumSamples();
 
-	// CALCULATE LFO PHASE CHANGE PER SAMPLE
-	const auto fc = pitch->get();
-	const auto lnfc = log(fc);
+	curPitch = pitch->get();
+	mainSynth->setCarrierFrequency(curPitch);
+	mainSynth->setSampleRate(sampleRate);
 
-	S = fc * 0.005;
-	I1 = 17 * (8 - lnfc)/ (lnfc * lnfc);
-	I2 = 20 * (8 - lnfc)/ fc;
-
-	lfoStep = fc / sampleRate;
-	lfoM1Step = (fc + S) / sampleRate;
-	lfoM2Step = (fc * 4.f + S) / sampleRate;
+	prepareSideSynth(fifthSynth, fifthRatio, isFifthOn, fifth->get());
+	prepareSideSynth(fourthSynth, fourthRatio, isFourthOn, fourth->get());
+	prepareSideSynth(thirdSynth, thirdRatio, isThirdOn, third->get());
+	prepareSideSynth(thirdMinorSynth, thirdMinorRatio, isThirdMinorOn, thirdMinor->get());
+	prepareSideSynth(octaveSynth,octaveRatio, isOctaveOn, octave->get());
 
 	// GET BOTH CHANNELS
 	auto* leftChannel = buffer.getWritePointer(0);
 	auto* rightChannel = buffer.getWritePointer(1);
 
-	// e = A(t)sin[2*pi*fc*t + I1 * sin(2*pi*(fm1+S)*t) + I2 * sin(2*pi*(fm2+S)t)]
-	// S = fc / 200;
-	// I1 = 17*(8-ln(fc)) / (ln(fc))^2;
-	// I2 = 20*(8-ln(fc)) / fc;
-	// fc:fm1:fm2 == 1:1:4
-
 	for(auto i = 0; i < bufferLength; i++) {
-		lfoPhase += lfoStep;	// for each sample increment the phase
+		// get current sinusoid value and multiply it by desired gain
+		auto output = mainSynth->getNextValue();
+		if(isFifthOn) output += fifthSynth->getNextValue();
+		if(isFourthOn) output += fourthSynth->getNextValue();
+		if(isThirdOn) output += thirdSynth->getNextValue();
+		if(isThirdMinorOn) output += thirdMinorSynth->getNextValue();
+		if(isOctaveOn) output += octaveSynth->getNextValue();
 
-		if(lfoPhase > 1) { // modulo - we always want values between 0 and 1
-			lfoPhase -= 1;
-		}
-
-		lfoM1Phase += lfoM1Step;	// for each sample increment the phase
-
-		if(lfoM1Phase > 1) { //	 modulo - we always want values between 0 and 1
-			lfoM1Phase -= 1;
-		}
-
-		lfoM2Phase += lfoM2Step;	// for each sample increment the phase
-
-		if(lfoM2Phase > 1) { //	 modulo - we always want values between 0 and 1
-			lfoM2Phase -= 1;
-		}
-
-		// calculate current sinusoid value and multiply it by desired gain
-		const auto sinM1 = sin(juce::MathConstants<float>::twoPi * lfoM1Phase);
-		const auto sinM2 = sin(juce::MathConstants<float>::twoPi * lfoM2Phase);
-		auto output = gain->get() * sin(juce::MathConstants<float>::twoPi * lfoPhase + I1 * sinM1 + I2 * sinM2);
+		output *= gain->get();
 
 		// write the result to output buffer
 		leftChannel[i] = output;
@@ -119,38 +103,26 @@ void SimpleSynthAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 		}
 	}
 
+	// slap an envelope onto it so it sounds better
 	adsr.applyEnvelopeToBuffer(buffer, 0, bufferLength);
+}
+
+void SimpleSynthAudioProcessor::prepareSideSynth(const std::unique_ptr<SinusoidSynth>& synth, const HarmonyRatio& ratio, bool& state, const bool isOn){
+	if(state != isOn){
+		synth->reset(mainSynth->getCarrierPhase());
+		state = isOn;
+	}
+
+	if(!isOn) return;
+
+	const auto sampleRate = getSampleRate();
+	synth->setCarrierFrequency(calculateHarmonyFrequency(curPitch, ratio));
+	synth->setSampleRate(sampleRate);
 }
 
 float SimpleSynthAudioProcessor::calculateHarmonyFrequency(const float baseFrequency, const HarmonyRatio& ratio) const {
 	return baseFrequency * ratio.numerator / ratio.denominator;
 }
-
-float SimpleSynthAudioProcessor::getFMPianoValue(const float baseFrequency, const float sampleRate) {
-	// TODO: make class out of it
-	const auto fc = pitch->get();
-	const auto lnfc = log(fc);
-
-	auto S = fc * 0.005;
-	auto I1 = 17 * (8 - lnfc) / (lnfc * lnfc);
-	auto I2 = 20 * (8 - lnfc) / fc;
-
-	auto lfoStep = fc / sampleRate;
-	auto lfoM1Step = (fc + S) / sampleRate;
-	auto lfoM2Step = (fc * 4.f + S) / sampleRate;
-
-	lfoPhase += lfoStep;	// for each sample increment the phase
-
-	if (lfoPhase > 1) { // modulo - we always want values between 0 and 1
-		lfoPhase -= 1;
-	}
-
-	const auto sinM1 = sin(juce::MathConstants<float>::twoPi * lfoM1Phase);
-	const auto sinM2 = sin(juce::MathConstants<float>::twoPi * lfoM2Phase);
-	auto output = gain->get() * sin(juce::MathConstants<float>::twoPi * lfoPhase + I1 * sinM1 + I2 * sinM2);
-
-}
-
 
 SimpleSynthAudioProcessor::~SimpleSynthAudioProcessor()
 {}
