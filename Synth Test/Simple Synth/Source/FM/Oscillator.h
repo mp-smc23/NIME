@@ -2,7 +2,7 @@
 
 class Oscillator {
 public:
-	Oscillator() {};
+	Oscillator() = default;
 	~Oscillator() = default;
 
 	void setPhase(const float newPhase) { phase = newPhase; }

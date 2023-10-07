@@ -67,10 +67,12 @@ void SimpleSynthAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 	const float sampleRate = getSampleRate();
 	const float bufferLength = buffer.getNumSamples();
 
-	curPitch = pitch->get();
-	mainSynth->setCarrierFrequency(curPitch);
-	mainSynth->setSampleRate(sampleRate);
+	curPitch = pitch->get(); // get current value of pitch parameter
 
+	mainSynth->setCarrierFrequency(curPitch); 	// update pitch of the main synth
+	mainSynth->setSampleRate(sampleRate);		// update sample rate of the main synth
+
+	// prapare all side synths
 	prepareSideSynth(fifthSynth, fifthRatio, isFifthOn, fifth->get());
 	prepareSideSynth(fourthSynth, fourthRatio, isFourthOn, fourth->get());
 	prepareSideSynth(thirdSynth, thirdRatio, isThirdOn, third->get());
@@ -84,13 +86,15 @@ void SimpleSynthAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 	for(auto i = 0; i < bufferLength; i++) {
 		// get current sinusoid value and multiply it by desired gain
 		auto output = mainSynth->getNextValue();
+
+		// add intervals if they're turned on
 		if(isFifthOn) output += fifthSynth->getNextValue();
 		if(isFourthOn) output += fourthSynth->getNextValue();
 		if(isThirdOn) output += thirdSynth->getNextValue();
 		if(isThirdMinorOn) output += thirdMinorSynth->getNextValue();
 		if(isOctaveOn) output += octaveSynth->getNextValue();
 
-		output *= gain->get();
+		output *= gain->get(); // multiply by the gain parameter
 
 		// write the result to output buffer
 		leftChannel[i] = output;
@@ -107,14 +111,16 @@ void SimpleSynthAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 	adsr.applyEnvelopeToBuffer(buffer, 0, bufferLength);
 }
 
-void SimpleSynthAudioProcessor::prepareSideSynth(const std::unique_ptr<SinusoidSynth>& synth, const HarmonyRatio& ratio, bool& state, const bool isOn){
-	if(state != isOn){
+void SimpleSynthAudioProcessor::prepareSideSynth(const std::unique_ptr<SinusoidSynth>& synth, const HarmonyRatio& ratio, bool& prevState, const bool newState){
+	// if the synth was just turned on/off reset it
+	if(prevState != newState){
 		synth->reset(mainSynth->getCarrierPhase());
-		state = isOn;
+		prevState = newState;
 	}
 
-	if(!isOn) return;
+	if(!newState) return; // synth is turned off, nothing to do
 
+	// if the synth is turned on, update pitch and sample rate values
 	const auto sampleRate = getSampleRate();
 	synth->setCarrierFrequency(calculateHarmonyFrequency(curPitch, ratio));
 	synth->setSampleRate(sampleRate);

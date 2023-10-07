@@ -8,7 +8,7 @@
 /// by  Bill Schottstaedt
 class SinusoidSynth {
 public:
-	SinusoidSynth() {};
+	SinusoidSynth() = default;
 	~SinusoidSynth() = default;
 
 	/// Resets Synth's internal oscillator phases to given value
@@ -23,9 +23,11 @@ public:
 	/// Returns current synthesised value. This function is meant to be run every sample during processing. Automatically updates internal oscillators.
 	float getNextValue();
 
+	/// Returns current value of carrier's phase
 	float getCarrierPhase() const { return carrierOsc.getPhase(); }
 
 private:
+	/// Updates internal variables and oscillators
 	void update();
 	
 	Oscillator carrierOsc;

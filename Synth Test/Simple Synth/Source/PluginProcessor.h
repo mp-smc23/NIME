@@ -96,7 +96,7 @@ private:
 	juce::ADSR adsr;
 	int adsrResetCounter {0};
 
-	void prepareSideSynth(const std::unique_ptr<SinusoidSynth>& synth, const HarmonyRatio& ratio, bool& state, const bool isOn);
+	void prepareSideSynth(const std::unique_ptr<SinusoidSynth>& synth, const HarmonyRatio& ratio, bool& prevState, const bool newState);
     float calculateHarmonyFrequency(const float baseFrequency, const HarmonyRatio& ratio) const;
 
 
