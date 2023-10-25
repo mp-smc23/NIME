@@ -4,3 +4,6 @@
 [submodule "PitchBox/Libraries/DaisySP"]
 	path = PitchBox/Libraries/DaisySP
 	url = https://github.com/electro-smith/DaisySP.git
+[submodule "PitchBox/Libraries/stmlib"]
+	path = PitchBox/Libraries/stmlib
+	url = https://github.com/pichenettes/stmlib.git

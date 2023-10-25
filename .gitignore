@@ -105,7 +105,8 @@ extras/Projucer/JUCECompileEngine.dylib
 .idea
 **/cmake-build*
 
-.vscode
 /build
 
 CMakeUserPresets.json
+
+PitchBox/build/
