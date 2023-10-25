@@ -1,0 +1,6 @@
+[submodule "PitchBox/Libraries/libDaisy"]
+	path = PitchBox/Libraries/libDaisy
+	url = https://github.com/electro-smith/libDaisy.git
+[submodule "PitchBox/Libraries/DaisySP"]
+	path = PitchBox/Libraries/DaisySP
+	url = https://github.com/electro-smith/DaisySP.git
