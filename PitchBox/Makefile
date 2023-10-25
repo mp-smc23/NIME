@@ -2,7 +2,9 @@
 TARGET = PitchBox
 
 # Sources
-CPP_SOURCES = Source/PitchBox.cpp 
+CPP_SOURCES = \
+	Source/PitchBox.cpp \
+ 	Source/FM/SinusoidSynth.cpp
 
 # Library Locations
 LIBDAISY_DIR = Libraries/libDaisy
