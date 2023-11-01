@@ -34,6 +34,7 @@ float sampleRate;
 float curPitch;
 
 DaisySeed hw;
+Switch octaveButton;
 
 void init(){
     mainSynth = std::make_unique<SinusoidSynth>();
@@ -77,7 +78,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 	prepareSideSynth(fourthSynth, fourthRatio, isFourthOn, false); //TODO replace false with button input
 	prepareSideSynth(thirdSynth, thirdRatio, isThirdOn, false);  //TODO replace false with button input
 	prepareSideSynth(thirdMinorSynth, thirdMinorRatio, isThirdMinorOn, false); //TODO replace false with button input
-	prepareSideSynth(octaveSynth, octaveRatio, isOctaveOn, false); //TODO replace false with button input
+	prepareSideSynth(octaveSynth, octaveRatio, isOctaveOn, octaveButton.Pressed()); //TODO replace false with button input
 
 	for(size_t i = 0; i < size; i++) {
 		// get current sinusoid value and multiply it by desired gain
@@ -106,6 +107,11 @@ int main(void)
     hw.SetAudioBlockSize(4);
     sampleRate = hw.AudioSampleRate();
 
+	//Set button to pin 0, to be updated at a 1kHz  samplerate
+    octaveButton.Init(hw.GetPin(0), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
     hw.StartAudio(AudioCallback);
-    while(1) {}
+	
+    while(1) {
+		octaveButton.Debounce();
+	}
 }
