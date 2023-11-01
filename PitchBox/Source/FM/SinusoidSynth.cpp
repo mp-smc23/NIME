@@ -7,14 +7,14 @@ void SinusoidSynth::reset(const float startPhase){
 }
 
 void SinusoidSynth::setCarrierFrequency(const float carrierFrequency){
-	if(abs(this->carrierFrequency - carrierFrequency) > 0.0001f) return;
+	if(abs(this->carrierFrequency - carrierFrequency) < 0.0001f) return;
 
 	this->carrierFrequency = carrierFrequency;
 	update();
 }
 
 void SinusoidSynth::setSampleRate(const float sampleRate){
-	if(abs(this->sampleRate - sampleRate) > 0.0001f) return;
+	if(abs(this->sampleRate - sampleRate) < 0.0001f) return;
 
 	this->sampleRate = sampleRate;
 	update();

@@ -99,6 +99,8 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 
 int main(void)
 {
+	init();
+
     hw.Configure();
     hw.Init();
     hw.SetAudioBlockSize(4);
