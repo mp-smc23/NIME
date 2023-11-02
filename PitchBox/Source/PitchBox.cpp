@@ -1,6 +1,7 @@
 #include "daisy_seed.h"
 #include "daisysp.h"
 #include "FM/SinusoidSynth.h"
+#include "Ultrasonic/Ultrasonic.h"
 #include <memory>
 
 using namespace daisy;
@@ -32,9 +33,14 @@ bool isOctaveOn{false};
 
 float sampleRate;
 float curPitch;
+float curGain;
 
 DaisySeed hw;
 Switch octaveButton;
+
+Ultrasonic ultrasonic(seed::D2);
+
+uint32_t distance;
 
 void init(){
     mainSynth = std::make_unique<SinusoidSynth>();
@@ -68,7 +74,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
                    size_t                    size)
 {
 
-    curPitch = 440.f; // TODO pitch->get(); // get current value of pitch parameter
+    curPitch = 440; // TODO pitch->get(); // get current value of pitch parameter
 
 	mainSynth->setCarrierFrequency(curPitch); 	// update pitch of the main synth
 	mainSynth->setSampleRate(sampleRate);		// update sample rate of the main synth
@@ -91,7 +97,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 		if(isThirdMinorOn) output += thirdMinorSynth->getNextValue();
 		if(isOctaveOn) output += octaveSynth->getNextValue();
 
-		output *= 0.2f; // TODO gain->get(); // multiply by the gain parameter
+		// output *= 0.2f; // TODO gain->get(); // multiply by the gain parameter
 
 		// write the result to output buffer
 		out[0][i] = out[1][i] = output;
@@ -110,8 +116,15 @@ int main(void)
 	//Set button to pin 0, to be updated at a 1kHz  samplerate
     octaveButton.Init(hw.GetPin(0), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
     hw.StartAudio(AudioCallback);
-	
+	hw.StartLog(true);
+    
     while(1) {
 		octaveButton.Debounce();
+
+		daisy::System::Delay(100);
+		distance = ultrasonic.MeasureInInches();
+		// Print "Hello World" to the Serial Monitor
+		hw.PrintLine("Print an int value:%d", distance);
+		hw.SetLed(distance > 5);
 	}
 }
