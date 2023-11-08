@@ -28,13 +28,12 @@ uint32_t Ultrasonic::pulseIn(const uint32_t state, const uint32_t timeout) {
     return timeDiff(pulseBegin, pulseEnd);
 }
 
+/// Return distance in mm
 float Ultrasonic::getDistance(const uint32_t timeout) {  
     trigPin.Write(false); // write low voltage
     daisy::System::DelayUs(2);
     trigPin.Write(true); // write high voltage
     daisy::System::DelayUs(5);
     trigPin.Write(false); // write low voltage
-    duration = pulseIn(1, timeout);
-    distance = duration * 3.43;
-    return distance;
+    return pulseIn(1, timeout) * .343; // in mm
 }

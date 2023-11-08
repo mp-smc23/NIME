@@ -6,24 +6,19 @@
 
 class Ultrasonic {
   public:
-    Ultrasonic(daisy::DaisySeed* hw, daisy::Pin trigger = daisy::seed::D1, daisy::Pin echo = daisy::seed::D2)
-    : hw(hw)
+    Ultrasonic(daisy::Pin trigger, daisy::Pin echo)
     {
-    echoPin.Init(echo, daisy::GPIO::Mode::INPUT, daisy::GPIO::Pull::NOPULL); // set it like an input
-    trigPin.Init(trigger, daisy::GPIO::Mode::OUTPUT); // set it like an output
+      echoPin.Init(echo, daisy::GPIO::Mode::INPUT, daisy::GPIO::Pull::NOPULL); // set it like an input
+      trigPin.Init(trigger, daisy::GPIO::Mode::OUTPUT); // set it like an output
     }
 
-
     float getDistance(const uint32_t timeout = 1000000);  
-    uint32_t pulseIn(const uint32_t state, const uint32_t timeout);
 
   private:
+    uint32_t pulseIn(const uint32_t state, const uint32_t timeout);
+
     daisy::GPIO trigPin; // generic gpio object
     daisy::GPIO echoPin; // generic gpio object
-    
-    daisy::DaisySeed* hw;
-
-    float duration, distance;
 };
 
 #endif

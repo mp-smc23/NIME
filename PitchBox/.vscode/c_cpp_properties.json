@@ -28,7 +28,11 @@
             "servertype": "openocd",
             "showDevDebugOutput": true,
             "svdFile": "${workspaceRoot}/.vscode/STM32H750x.svd",
-            "type": "cortex-debug"
+            "type": "cortex-debug",
+            "includePath": [
+                "${default}",
+                "${workspaceFolder}/Libraries/libDaisy/src"
+            ]
         }
     ],
     "version": 4

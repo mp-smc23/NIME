@@ -7,9 +7,10 @@ void SinusoidSynth::reset(const float startPhase){
 }
 
 void SinusoidSynth::setCarrierFrequency(const float carrierFrequency){
-	if(abs(this->carrierFrequency - carrierFrequency) < 0.0001f) return;
+	const auto newFrequency =  calculateHarmonyFrequency(carrierFrequency, harmonyRatio);
+	if(abs(this->carrierFrequency - newFrequency) < 0.0001f) return;
 
-	this->carrierFrequency = carrierFrequency;
+	this->carrierFrequency = newFrequency;
 	update();
 }
 
@@ -37,4 +38,8 @@ void SinusoidSynth::update(){
 	carrierOsc.setStep(carrierFrequency / sampleRate);			// fc:fm1:fm2 == 1:1:4
 	m1Osc.setStep((carrierFrequency + S) / sampleRate);			// fm1 + S
 	m2Osc.setStep((carrierFrequency * 4.f + S) / sampleRate);	// fm2 + S
+}
+
+float SinusoidSynth::calculateHarmonyFrequency(const float baseFrequency, const HarmonyRatio& ratio){
+	return baseFrequency * ratio.numerator / ratio.denominator;
 }

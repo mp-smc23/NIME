@@ -7,7 +7,12 @@
 /// by  Bill Schottstaedt
 class SinusoidSynth {
 public:
-	SinusoidSynth() = default;
+	struct HarmonyRatio {
+		float numerator;
+		float denominator;
+	};
+
+	SinusoidSynth(HarmonyRatio ratio = {1.f, 1.f}) : harmonyRatio(ratio) {};
 	~SinusoidSynth() = default;
 
 	/// Resets Synth's internal oscillator phases to given value
@@ -28,7 +33,10 @@ public:
 private:
 	/// Updates internal variables and oscillators
 	void update();
-	
+	static float calculateHarmonyFrequency(const float baseFrequency, const HarmonyRatio& ratio);
+
+	HarmonyRatio harmonyRatio;
+
 	Oscillator carrierOsc;
 	Oscillator m1Osc;
 	Oscillator m2Osc;
