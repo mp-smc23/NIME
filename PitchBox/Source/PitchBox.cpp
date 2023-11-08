@@ -37,10 +37,10 @@ float curGain;
 
 DaisySeed hw;
 Switch octaveButton;
+GPIO echoPin;
+Ultrasonic ultrasonic(&hw);
 
-Ultrasonic ultrasonic(seed::D2);
-
-uint32_t distance;
+float distance;
 
 void init(){
     mainSynth = std::make_unique<SinusoidSynth>();
@@ -74,7 +74,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
                    size_t                    size)
 {
 
-    curPitch = 440; // TODO pitch->get(); // get current value of pitch parameter
+    curPitch = distance; // TODO pitch->get(); // get current value of pitch parameter
 
 	mainSynth->setCarrierFrequency(curPitch); 	// update pitch of the main synth
 	mainSynth->setSampleRate(sampleRate);		// update sample rate of the main synth
@@ -117,14 +117,12 @@ int main(void)
     octaveButton.Init(hw.GetPin(0), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
     hw.StartAudio(AudioCallback);
 	hw.StartLog(true);
-    
+    echoPin.Init(seed::D2, daisy::GPIO::Mode::INPUT, daisy::GPIO::Pull::PULLUP); // set it like an input
     while(1) {
 		octaveButton.Debounce();
-
 		daisy::System::Delay(100);
-		distance = ultrasonic.MeasureInInches();
-		// Print "Hello World" to the Serial Monitor
-		hw.PrintLine("Print an int value:%d", distance);
+		distance = ultrasonic.getDistance();
+		hw.PrintLine("Print distance value:%d", static_cast<int>(distance));
 		hw.SetLed(distance > 5);
 	}
 }
