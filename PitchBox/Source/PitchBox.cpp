@@ -22,6 +22,17 @@ Switch fourthButton;
 Switch thirdButton;
 Switch thirdMinorButton;
 
+Switch sustainButton;
+// Switch button; 
+// Switch button;
+// Switch button;
+// Switch button;
+
+// LEDs
+Led powerLed;
+Led pitchClipLed;
+Led volumeClipLed;
+
 std::unique_ptr<SinusoidSynth> mainSynth;
 std::unique_ptr<SinusoidSynth> fifthSynth;
 std::unique_ptr<SinusoidSynth> fourthSynth;
@@ -116,6 +127,16 @@ int main(void)
     fourthButton.Init(hw.GetPin(2), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
     thirdButton.Init(hw.GetPin(1), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
     thirdMinorButton.Init(hw.GetPin(0), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
+
+    // button.Init(hw.GetPin(5), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
+    // button.Init(hw.GetPin(6), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
+    // button.Init(hw.GetPin(7), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
+    // button.Init(hw.GetPin(8), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
+    sustainButton.Init(hw.GetPin(9), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
+
+	powerLed.Init(hw.GetPin(), false);
+	pitchClipLed.Init(hw.GetPin(), false);
+	volumeClipLed.Init(hw.GetPin(), false);
 
     hw.StartAudio(AudioCallback);
 	hw.StartLog(true);
