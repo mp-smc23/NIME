@@ -35,5 +35,11 @@ float Ultrasonic::getDistance(const uint32_t timeout) {
     trigPin.Write(true); // write high voltage
     daisy::System::DelayUs(5);
     trigPin.Write(false); // write low voltage
-    return pulseIn(1, timeout) * .343; // in mm
+    return static_cast<float>(pulseIn(1, timeout)) * .343f; // in mm
+}
+
+float Ultrasonic::getDistanceFiltered(const float alpha, const uint32_t timeout){
+    const auto curDistance =  getDistance(timeout);
+    distance = curDistance + alpha * (distance - curDistance);
+    return distance;
 }

@@ -4,6 +4,7 @@
 #include "FM/SinusoidSynth.h"
 #include "Ultrasonic/Ultrasonic.h"
 #include "Mappings/Pitch.h"
+#include "Mappings/Smoothing.h"
 
 #include <memory>
 
@@ -38,6 +39,7 @@ bool isOctaveOn{false};
 Ultrasonic pitchSensor{seed::D26, seed::D27};
 Ultrasonic volumeSensor{seed::D29, seed::D30};
 
+Smoothing distanceSmoothing{10};
 float distancePitch, distanceVolume;
 
 float curPitch;
@@ -70,6 +72,8 @@ void AudioCallback(AudioHandle::InputBuffer  in,
                    AudioHandle::OutputBuffer out,
                    size_t                    size)
 {
+	curPitch = mapping::pitchFromDistance(distanceSmoothing.getNextValue());
+
 	mainSynth->setCarrierFrequency(curPitch); 	// update pitch of the main synth
 	mainSynth->setSampleRate(sampleRate);		// update sample rate of the main synth
 
@@ -124,15 +128,17 @@ int main(void)
 		thirdMinorButton.Debounce();
 
 		// Ultrasonic sensors
-		distancePitch = pitchSensor.getDistance();
+		distancePitch = pitchSensor.getDistanceFiltered(0.1);
+		distanceSmoothing.setTargetValue(distancePitch);
+
 		distanceVolume = volumeSensor.getDistance();
+	
+		hw.SetLed(distancePitch > 50);
 
-		curPitch = mapping::pitchFromDistance(distanceVolume);
-
-		daisy::System::Delay(100);
+		daisy::System::Delay(50);
 		
 		// DEBUG
-		hw.PrintLine("Print distance value:%d", static_cast<int>(distancePitch));
-		hw.SetLed(distancePitch > 50);
+		hw.PrintLine("Pitch distance [mm]: %d", static_cast<int>(distancePitch));
+		hw.PrintLine("Pitch mapped [Hz]: %d", static_cast<int>(curPitch));
 	}
 }
