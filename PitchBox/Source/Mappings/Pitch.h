@@ -1,11 +1,13 @@
 #include <math.h>
 
 namespace mapping{
+    const float MAX_DISTANCE = 1000.f;
+    const float MIN_DISTANCE = 100.f;
 
     static float indexFromDistance(const float distance, const float stepWidth = 20.f)
     {
-        const float xOffset = 100.f;
-        const float xInterval = 900.f;
+        const float xOffset = MIN_DISTANCE;
+        const float xInterval = MAX_DISTANCE - MIN_DISTANCE;
         const int firstNote = 40; // # E3
         const int lastNote = 60; // # C5
 

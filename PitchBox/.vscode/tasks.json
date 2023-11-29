@@ -100,6 +100,21 @@
           "$gcc"
         ],
         "type": "shell"
+      },
+      {
+        "command": "make clean;DEBUG=1 make; make program-dfu",
+        "dependsOn": [
+          "build_libdaisy",
+          "build_daisysp"
+        ],
+        "label": "build_all_debug_and_program_dfu",
+        "options": {
+          "cwd": "${workspaceFolder}"
+        },
+        "problemMatcher": [
+          "$gcc"
+        ],
+        "type": "shell"
       }
     ],
     "version": "2.0.0"

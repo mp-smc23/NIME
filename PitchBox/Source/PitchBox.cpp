@@ -29,9 +29,9 @@ Switch sustainButton;
 // Switch button;
 
 // LEDs
-Led powerLed;
-Led pitchClipLed;
-Led volumeClipLed;
+daisy::GPIO powerLed;
+daisy::GPIO pitchClipLed;
+daisy::GPIO volumeClipLed;
 
 std::unique_ptr<SinusoidSynth> mainSynth;
 std::unique_ptr<SinusoidSynth> fifthSynth;
@@ -47,14 +47,19 @@ bool isThirdMinorOn{false};
 bool isOctaveOn{false};
 
 // Ultrasonic sensors
-Ultrasonic pitchSensor{seed::D26, seed::D27};
-Ultrasonic volumeSensor{seed::D29, seed::D30};
+Ultrasonic pitchSensor{seed::D22, seed::D23};
+Ultrasonic volumeSensor{seed::D26, seed::D27};
 
-Smoothing distanceSmoothing{10};
+Smoothing pitchDistanceSmoothing{10};
+Smoothing volumeDistanceSmoothing{10};
 float distancePitch, distanceVolume;
 
 float curPitch;
 float curGain;
+
+#ifdef DEBUG
+uint32_t timeStart,timeEnd; //timing debugging
+#endif
 
 void init(){
     mainSynth = std::make_unique<SinusoidSynth>();
@@ -83,7 +88,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
                    AudioHandle::OutputBuffer out,
                    size_t                    size)
 {
-	curPitch = mapping::pitchFromDistance(distanceSmoothing.getNextValue());
+	curPitch = mapping::pitchFromDistance(pitchDistanceSmoothing.getNextValue());
 
 	mainSynth->setCarrierFrequency(curPitch); 	// update pitch of the main synth
 	mainSynth->setSampleRate(sampleRate);		// update sample rate of the main synth
@@ -106,7 +111,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 		if(isThirdMinorOn) output += thirdMinorSynth->getNextValue();
 		if(isOctaveOn) output += octaveSynth->getNextValue();
 
-		// output *= 0.2f; // TODO map distance to gain; // multiply by the gain parameter
+		output *= 0.1f; // TODO map distance to gain; // multiply by the gain parameter
 
 		// write the result to output buffer
 		out[0][i] = out[1][i] = output;
@@ -134,12 +139,18 @@ int main(void)
     // button.Init(hw.GetPin(8), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
     sustainButton.Init(hw.GetPin(9), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
 
-	powerLed.Init(hw.GetPin(), false);
-	pitchClipLed.Init(hw.GetPin(), false);
-	volumeClipLed.Init(hw.GetPin(), false);
+	pitchClipLed.Init(seed::D14, daisy::GPIO::Mode::OUTPUT, daisy::GPIO::Pull::NOPULL);
+	powerLed.Init(seed::D13, daisy::GPIO::Mode::OUTPUT, daisy::GPIO::Pull::NOPULL);
+	volumeClipLed.Init(seed::D12, daisy::GPIO::Mode::OUTPUT, daisy::GPIO::Pull::NOPULL);
 
     hw.StartAudio(AudioCallback);
+
+#ifdef DEBUG
 	hw.StartLog(true);
+#endif
+
+	powerLed.Write(true);
+
     while(1) {
 		// Buttons
 		octaveButton.Debounce();
@@ -147,19 +158,26 @@ int main(void)
 		fourthButton.Debounce();
 		thirdButton.Debounce();
 		thirdMinorButton.Debounce();
+		sustainButton.Debounce();
 
 		// Ultrasonic sensors
-		distancePitch = pitchSensor.getDistanceFiltered(0.1);
-		distanceSmoothing.setTargetValue(distancePitch);
+		distancePitch = pitchSensor.getDistanceFiltered();
+		pitchDistanceSmoothing.setTargetValue(distancePitch);
 
-		distanceVolume = volumeSensor.getDistance();
+		distanceVolume = volumeSensor.getDistanceFiltered();
+		volumeDistanceSmoothing.setTargetValue(distanceVolume);
 	
+		pitchClipLed.Write(distancePitch > mapping::MAX_DISTANCE);
+		volumeClipLed.Write(distanceVolume > mapping::MAX_DISTANCE);
+
+		daisy::System::Delay(10);
+		
+	#ifdef DEBUG 
 		hw.SetLed(distancePitch > 50);
 
-		daisy::System::Delay(50);
-		
-		// DEBUG
 		hw.PrintLine("Pitch distance [mm]: %d", static_cast<int>(distancePitch));
 		hw.PrintLine("Pitch mapped [Hz]: %d", static_cast<int>(curPitch));
+		hw.PrintLine("Time to measure distance: %d", timeEnd - timeStart);
+	#endif
 	}
 }
