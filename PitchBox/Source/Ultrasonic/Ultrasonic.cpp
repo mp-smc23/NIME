@@ -11,14 +11,14 @@ uint32_t Ultrasonic::pulseIn(const uint32_t state, const uint32_t timeout) {
     // wait for any previous pulse to end
     while (echoPin.Read() == state) { 
         if (timeDiff(begin, daisy::System::GetUs()) >= timeout) {
-            return 0;
+            return 100000000L;
         }
     }
 
     // wait for the pulse to start
     while (echoPin.Read() != state){ 
         if (timeDiff(begin, daisy::System::GetUs()) >= timeout) {
-            return 0;
+            return 100000000L;
         }
     }
 
@@ -27,7 +27,7 @@ uint32_t Ultrasonic::pulseIn(const uint32_t state, const uint32_t timeout) {
     // wait for the pulse to stop
     while (echoPin.Read() == state) { 
         if (timeDiff(begin, daisy::System::GetUs()) >= timeout) {
-            return 0;
+            return 100000000L;
         }
     }
     uint32_t pulseEnd = daisy::System::GetUs();

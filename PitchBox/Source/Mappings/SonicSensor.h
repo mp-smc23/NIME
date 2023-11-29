@@ -30,5 +30,32 @@ namespace mapping{
         const auto noteIndex = indexFromDistance(distance, stepWidth);
         return ::powf(2, ((noteIndex - 57.f) / 12.f)) * 440.f;
     }
-    
+
+    const int lengthPitches = 7;
+    const float pitches[] = { 160,     200,	    250,	315, 	400, 	500, 	630 };
+    const float volumes[] = {  87.82,   85.92,	84.31,	82.89,	81.68,	80.86,	80.17 };
+
+    static float equalLoudness(const float pitch){
+        for(auto i = 0; i < lengthPitches - 1; i++){
+            if(pitch > pitches[i] && pitch < pitches[i + 1]){
+                auto dy = volumes[i + 1] - volumes[i];
+                auto dx = pitches[i + 1] - pitches[i];
+                return dy / dx * (pitch - pitches[i]) + volumes[i];
+            }
+        }
+        return 1.f;
+    }
+
+    const float MIN_VOLUME = -60;
+
+    static float gainFromDistance(const float distance){
+        if(distance < MIN_DISTANCE) return 0.f;
+        if(distance > MAX_DISTANCE) return 1.f;
+        auto x = distance - MIN_DISTANCE;
+        return gainFromDb(MIN_VOLUME - (x * MIN_VOLUME / (MAX_DISTANCE - MIN_DISTANCE))); 
+    }
+
+    static float gainFromDb(const float db){
+        return db > MIN_VOLUME ? ::pow(10.f, db * 0.05f) : 0.f;
+    }
 }

@@ -3,7 +3,7 @@
 
 #include "FM/SinusoidSynth.h"
 #include "Ultrasonic/Ultrasonic.h"
-#include "Mappings/Pitch.h"
+#include "Mappings/SonicSensor.h"
 #include "Mappings/Smoothing.h"
 
 #include <memory>
@@ -55,7 +55,7 @@ Smoothing volumeDistanceSmoothing{10};
 float distancePitch, distanceVolume;
 
 float curPitch;
-float curGain;
+float curVolume;
 
 #ifdef DEBUG
 uint32_t timeStart,timeEnd; //timing debugging
@@ -89,6 +89,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
                    size_t                    size)
 {
 	curPitch = mapping::pitchFromDistance(pitchDistanceSmoothing.getNextValue());
+	curVolume = mapping::gainFromDb(volumeDistanceSmoothing.getNextValue());
 
 	mainSynth->setCarrierFrequency(curPitch); 	// update pitch of the main synth
 	mainSynth->setSampleRate(sampleRate);		// update sample rate of the main synth
@@ -111,7 +112,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 		if(isThirdMinorOn) output += thirdMinorSynth->getNextValue();
 		if(isOctaveOn) output += octaveSynth->getNextValue();
 
-		output *= 0.1f; // TODO map distance to gain; // multiply by the gain parameter
+		output *= curVolume * equalLoudness(curPitch); 
 
 		// write the result to output buffer
 		out[0][i] = out[1][i] = output;
