@@ -48,14 +48,14 @@ namespace mapping{
 
     const float MIN_VOLUME = -60;
 
+    static float gainFromDb(const float db){
+        return db > MIN_VOLUME ? ::pow(10.f, db * 0.05f) : 0.f;
+    }
+
     static float gainFromDistance(const float distance){
         if(distance < MIN_DISTANCE) return 0.f;
         if(distance > MAX_DISTANCE) return 1.f;
         auto x = distance - MIN_DISTANCE;
         return gainFromDb(MIN_VOLUME - (x * MIN_VOLUME / (MAX_DISTANCE - MIN_DISTANCE))); 
-    }
-
-    static float gainFromDb(const float db){
-        return db > MIN_VOLUME ? ::pow(10.f, db * 0.05f) : 0.f;
     }
 }

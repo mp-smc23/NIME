@@ -89,7 +89,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
                    size_t                    size)
 {
 	curPitch = mapping::pitchFromDistance(pitchDistanceSmoothing.getNextValue());
-	curVolume = mapping::gainFromDb(volumeDistanceSmoothing.getNextValue());
+	curVolume = mapping::gainFromDistance(volumeDistanceSmoothing.getNextValue());
 
 	mainSynth->setCarrierFrequency(curPitch); 	// update pitch of the main synth
 	mainSynth->setSampleRate(sampleRate);		// update sample rate of the main synth
@@ -112,7 +112,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 		if(isThirdMinorOn) output += thirdMinorSynth->getNextValue();
 		if(isOctaveOn) output += octaveSynth->getNextValue();
 
-		output *= curVolume * equalLoudness(curPitch); 
+		output *= curVolume * mapping::equalLoudness(curPitch); 
 
 		// write the result to output buffer
 		out[0][i] = out[1][i] = output;
