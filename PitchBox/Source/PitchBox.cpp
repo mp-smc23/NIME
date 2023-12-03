@@ -65,8 +65,10 @@ Smoothing volumeDistanceSmoothing{10};
 float distancePitch, distanceVolume;
 float curPitch, curVolume;
 
+float gain {.5f}; // Master gain for all volume parameters
+
 #ifdef DEBUG
-uint32_t timeStart,timeEnd; //timing debugging
+uint32_t timeStart, timeEnd; //timing debugging
 #endif
 
 void initSynths(){
@@ -154,8 +156,8 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 		if(isThirdMinorOn) output += thirdMinorSynth->getNextValue() * intervalsVolume;
 		if(isOctaveOn) output += octaveSynth->getNextValue() * intervalsVolume;
 
-		const auto volume = curVolume * mapping::equalLoudness(curPitch) * masterVolume; 
-		output *= volume; 
+		gain = sustainButton.Pressed() ? gain : curVolume * masterVolume; 
+		output *= gain * mapping::equalLoudness(curPitch); 
 
 		// write the result to output buffer
 		out[0][i] = out[1][i] = output;
