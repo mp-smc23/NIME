@@ -204,7 +204,7 @@ int main(void)
 		pitchClipLed.Write(distancePitch > mapping::MAX_DISTANCE);
 		volumeClipLed.Write(distanceVolume > mapping::MAX_DISTANCE);
 
-		// Read the first ADC that's configured. In our case, this is the only input.
+		// Knobs
     	masterVolume = hw.adc.GetFloat(0);
 		intervalsVolume = mapping::intervalVolumeScaled(hw.adc.GetFloat(1));
 		anchorsSize = mapping::anchorsSizeScaled(hw.adc.GetFloat(2)); 
