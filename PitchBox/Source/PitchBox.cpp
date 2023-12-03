@@ -65,8 +65,6 @@ Smoothing volumeDistanceSmoothing{10};
 float distancePitch, distanceVolume;
 float curPitch, curVolume;
 
-float gain {.5f}; // Master gain for all volume parameters
-
 #ifdef DEBUG
 uint32_t timeStart, timeEnd; //timing debugging
 #endif
@@ -133,7 +131,9 @@ void AudioCallback(AudioHandle::InputBuffer  in,
                    size_t                    size)
 {
 	curPitch = mapping::pitchFromDistance(pitchDistanceSmoothing.getNextValue(), anchorsSize);
-	curVolume = mapping::gainFromDistance(volumeDistanceSmoothing.getNextValue());
+	if(!sustainButton.Pressed()) {
+		curVolume = mapping::gainFromDistance(volumeDistanceSmoothing.getNextValue());
+	}
 
 	mainSynth->setCarrierFrequency(curPitch); 	// update pitch of the main synth
 	mainSynth->setSampleRate(sampleRate);		// update sample rate of the main synth
@@ -156,8 +156,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 		if(isThirdMinorOn) output += thirdMinorSynth->getNextValue() * intervalsVolume;
 		if(isOctaveOn) output += octaveSynth->getNextValue() * intervalsVolume;
 
-		gain = sustainButton.Pressed() ? gain : curVolume * masterVolume; 
-		output *= gain * mapping::equalLoudness(curPitch); 
+		output *= curVolume * mapping::equalLoudness(curPitch) * masterVolume; 
 
 		// write the result to output buffer
 		out[0][i] = out[1][i] = output;
