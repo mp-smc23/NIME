@@ -35,13 +35,19 @@ daisy::GPIO pitchClipLed;
 daisy::GPIO volumeClipLed;
 
 // Knobs
-AdcChannelConfig masterVolumeKnob;
-AdcChannelConfig intervalsVolumeKnob;
-AdcChannelConfig anchorsSizeKnob;
-AdcChannelConfig effectsIntensityKnob;
-AdcChannelConfig cutoffKnob;
-
-float masterVolume, intervalsVolume, anchorsSize, effectsInternsity, cutoff = {0.f}; 
+/*
+0 - master volume
+1 - intervals volume
+2 - anchors size
+3 - effects intensity
+4 - cutoff freq
+*/
+AdcChannelConfig knobs[5];
+Smoothing masterVolumeSmoothing{25};
+Smoothing intervalsVolumeSmoothing{25};
+Smoothing anchorsSizeSmoothing{25};
+Smoothing effectsInternsitySmoothing{25};
+Smoothing cutoffSmoothing{25};
 
 std::unique_ptr<SinusoidSynth> mainSynth;
 std::unique_ptr<SinusoidSynth> fifthSynth;
@@ -62,8 +68,8 @@ Ultrasonic volumeSensor{seed::D26, seed::D27};
 
 Smoothing pitchDistanceSmoothing{10};
 Smoothing volumeDistanceSmoothing{10};
-float distancePitch, distanceVolume;
-float curPitch, curVolume;
+float distancePitch, distanceVolume {1.f};
+float curPitch, curVolume {1.f};
 
 #ifdef DEBUG
 uint32_t timeStart, timeEnd; //timing debugging
@@ -99,17 +105,13 @@ void initLeds(){
 }
 
 void initKnobs(){
-	masterVolumeKnob.InitSingle(seed::A0);
-	intervalsVolumeKnob.InitSingle(seed::A1);
-	anchorsSizeKnob.InitSingle(seed::A2);
-	effectsIntensityKnob.InitSingle(seed::A3);
-	cutoffKnob.InitSingle(seed::A4);
+	knobs[0].InitSingle(seed::A0);
+	knobs[1].InitSingle(seed::A1);
+	knobs[2].InitSingle(seed::A2);
+	knobs[3].InitSingle(seed::A3);
+	knobs[4].InitSingle(seed::A4);
 
-	hw.adc.Init(&masterVolumeKnob, 1);
-	hw.adc.Init(&intervalsVolumeKnob, 1);
-	hw.adc.Init(&anchorsSizeKnob, 1);
-	hw.adc.Init(&effectsIntensityKnob, 1);
-	hw.adc.Init(&cutoffKnob, 1);
+	hw.adc.Init(knobs, 5);
 }
 
 void prepareSideSynth(const std::unique_ptr<SinusoidSynth>& synth, bool& prevState, const bool newState){
@@ -130,10 +132,16 @@ void AudioCallback(AudioHandle::InputBuffer  in,
                    AudioHandle::OutputBuffer out,
                    size_t                    size)
 {
-	curPitch = mapping::pitchFromDistance(pitchDistanceSmoothing.getNextValue(), anchorsSize);
+	// Get and/or calculate values for processing
+	curPitch = mapping::pitchFromDistance(pitchDistanceSmoothing.getNextValue(), anchorsSizeSmoothing.getNextValue());	
 	if(!sustainButton.Pressed()) {
 		curVolume = mapping::gainFromDistance(volumeDistanceSmoothing.getNextValue());
 	}
+
+
+	const auto equalLoudness = mapping::equalLoudness(curPitch);
+	const auto intervalsVolume = intervalsVolumeSmoothing.getNextValue();
+	const auto masterVolume = masterVolumeSmoothing.getNextValue();
 
 	mainSynth->setCarrierFrequency(curPitch); 	// update pitch of the main synth
 	mainSynth->setSampleRate(sampleRate);		// update sample rate of the main synth
@@ -156,7 +164,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 		if(isThirdMinorOn) output += thirdMinorSynth->getNextValue() * intervalsVolume;
 		if(isOctaveOn) output += octaveSynth->getNextValue() * intervalsVolume;
 
-		output *= curVolume * mapping::equalLoudness(curPitch) * masterVolume; 
+		output *= curVolume * equalLoudness * masterVolume; 
 
 		// write the result to output buffer
 		out[0][i] = out[1][i] = output;
@@ -167,7 +175,6 @@ int main(void)
 {
     hw.Configure();
     hw.Init();
-    hw.SetAudioBlockSize(4);
     sampleRate = hw.AudioSampleRate();
 
 	initSynths();
@@ -205,26 +212,29 @@ int main(void)
 		volumeClipLed.Write(distanceVolume > mapping::MAX_DISTANCE);
 
 		// Knobs
-    	masterVolume = hw.adc.GetFloat(0);
-		intervalsVolume = mapping::intervalVolumeScaled(hw.adc.GetFloat(1));
-		anchorsSize = mapping::anchorsSizeScaled(hw.adc.GetFloat(2)); 
-		effectsInternsity = mapping::effectsInternsityScaled(hw.adc.GetFloat(3));
-		cutoff = mapping::cutoffScaled(hw.adc.GetFloat(4));
+    	masterVolumeSmoothing.setTargetValue(hw.adc.GetFloat(0));
+		intervalsVolumeSmoothing.setTargetValue(mapping::intervalVolumeScaled(hw.adc.GetFloat(1)));
+		anchorsSizeSmoothing.setTargetValue(mapping::anchorsSizeScaled(hw.adc.GetFloat(2))); 
+		effectsInternsitySmoothing.setTargetValue(mapping::effectsInternsityScaled(hw.adc.GetFloat(3)));
+		cutoffSmoothing.setTargetValue(mapping::cutoffScaled(hw.adc.GetFloat(4)));
 
-		daisy::System::Delay(50);
-		
 	#ifdef DEBUG 
 		hw.SetLed(distancePitch > 50);
 
-		hw.PrintLine("Master Volume [* 100]: %d", static_cast<int>(masterVolume));
-		hw.PrintLine("Intervals Volume Scaled [* 100]: %d", static_cast<int>(intervalsVolume));
-		hw.PrintLine("Anchors Size Scaled: %d", static_cast<int>(anchorsSize));
-		hw.PrintLine("Effects Internsity Scaled [* 100]: %d", static_cast<int>(effectsInternsity));
-		hw.PrintLine("Cutoff Scaled [Hz]: %d", static_cast<int>(cutoff));
+		// hw.PrintLine("Master Volume [* 100]: %d", static_cast<int>(hw.adc.GetFloat(0) * 100));
+		// hw.PrintLine("Intervals Volume Scaled [* 100]: %d", static_cast<int>(mapping::intervalVolumeScaled(hw.adc.GetFloat(1)) * 100));
+		// hw.PrintLine("Anchors Size Scaled: %d", static_cast<int>(mapping::anchorsSizeScaled(hw.adc.GetFloat(2))));
+		// hw.PrintLine("Effects Internsity Scaled [* 100]: %d", static_cast<int>(mapping::effectsInternsityScaled(hw.adc.GetFloat(3)) * 100));
+		// hw.PrintLine("Cutoff Scaled [Hz]: %d", static_cast<int>(mapping::cutoffScaled(hw.adc.GetFloat(4))));
 
-		hw.PrintLine("Pitch distance [mm]: %d", static_cast<int>(distancePitch));
-		hw.PrintLine("Pitch mapped [Hz]: %d", static_cast<int>(curPitch));
-		hw.PrintLine("Time to measure distance: %d", timeEnd - timeStart);
+		// hw.PrintLine("Pitch distance [mm]: %d", static_cast<int>(distancePitch));
+		// hw.PrintLine("Pitch mapped [Hz]: %d", static_cast<int>(curPitch));
+		hw.PrintLine("Volume distance [mm]: %d", static_cast<int>(distanceVolume));
+		hw.PrintLine("Volume mapped [Hz]: %d", static_cast<int>(curVolume));
+		// hw.PrintLine("Time to measure distance: %d", timeEnd - timeStart);
+		// TODO implement left/right hand switch 
 	#endif
+
+		daisy::System::Delay(50);
 	}
 }
