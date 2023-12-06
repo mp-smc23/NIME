@@ -24,9 +24,9 @@ Switch thirdButton;
 Switch thirdMinorButton;
 
 Switch sustainButton;
-// Switch button; 
-// Switch button;
-// Switch button;
+Switch overdriveButton; 
+Switch lowPassButton;
+Switch chorusButton;
 // Switch button;
 
 // LEDs
@@ -71,6 +71,11 @@ Smoothing volumeDistanceSmoothing{10};
 float distancePitch, distanceVolume {1.f};
 float curPitch, curVolume {1.f};
 
+// Completely random effects
+Tone lowPass;
+Overdrive overdrive;
+Chorus chorus;
+
 #ifdef DEBUG
 uint32_t timeStart, timeEnd; //timing debugging
 #endif
@@ -91,9 +96,9 @@ void initButtons(){
     thirdButton.Init(hw.GetPin(1), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
     thirdMinorButton.Init(hw.GetPin(0), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
 
-    // button.Init(hw.GetPin(5), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
-    // button.Init(hw.GetPin(6), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
-    // button.Init(hw.GetPin(7), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
+    lowPassButton.Init(hw.GetPin(5), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
+    overdriveButton.Init(hw.GetPin(6), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
+    chorusButton.Init(hw.GetPin(7), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
     // button.Init(hw.GetPin(8), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
     sustainButton.Init(hw.GetPin(9), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
 }
@@ -112,6 +117,19 @@ void initKnobs(){
 	knobs[4].InitSingle(seed::A4);
 
 	hw.adc.Init(knobs, 5);
+}
+
+void initEffects(){
+	lowPass.Init(sampleRate);
+	
+	overdrive.Init();
+	overdrive.SetDrive(0.4f);
+
+	chorus.Init(sampleRate);
+    chorus.SetDelay(1.f);
+    chorus.SetFeedback(0.5f);
+	chorus.SetLfoDepth(1.f);
+	chorus.SetLfoFreq(6.5f);
 }
 
 void prepareSideSynth(const std::unique_ptr<SinusoidSynth>& synth, bool& prevState, const bool newState){
@@ -152,6 +170,9 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 	prepareSideSynth(thirdMinorSynth, isThirdMinorOn, thirdMinorButton.Pressed()); 
 	prepareSideSynth(octaveSynth, isOctaveOn, octaveButton.Pressed());
 
+	lowPass.SetFreq(cutoffSmoothing.getNextValue());
+	const auto effectsIntensity = effectsInternsitySmoothing.getNextValue();
+
 	for(size_t i = 0; i < size; i++) {
 		// get current sinusoid value and multiply it by desired gain
 		auto output = mainSynth->getNextValue();
@@ -163,6 +184,12 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 		if(isThirdMinorOn) output += thirdMinorSynth->getNextValue() * intervalsVolume;
 		if(isOctaveOn) output += octaveSynth->getNextValue() * intervalsVolume;
 
+		// Effects
+		if(overdriveButton.Pressed()) output = (1 - effectsIntensity) * output + effectsIntensity * overdrive.Process(output);
+		if(chorusButton.Pressed()) output = (1 - effectsIntensity) * output + effectsIntensity * chorus.Process(output);
+		if(lowPassButton.Pressed()) output = lowPass.Process(output);
+
+		// Gain
 		output *= volume; 
 
 		// write the result to output buffer
@@ -180,6 +207,7 @@ int main(void)
 	initButtons();
 	initLeds();
 	initKnobs();
+	initEffects();
  
 	hw.adc.Start(); // Start the ADC
     hw.StartAudio(AudioCallback); // Start audio callback
@@ -198,14 +226,21 @@ int main(void)
 		thirdButton.Debounce();
 		thirdMinorButton.Debounce();
 		sustainButton.Debounce();
+		lowPassButton.Debounce();
+		overdriveButton.Debounce();
+		chorusButton.Debounce();
 
 		// Ultrasonic sensors
 		distancePitch = pitchSensor.getDistanceFiltered();
 		pitchDistanceSmoothing.setTargetValue(distancePitch);
 
+		daisy::System::Delay(10);
+
 		distanceVolume = volumeSensor.getDistanceFiltered();
 		volumeDistanceSmoothing.setTargetValue(distanceVolume);
 	
+		daisy::System::Delay(10);
+
 		// LEDs
 		pitchClipLed.Write(distancePitch > mapping::MAX_DISTANCE);
 		volumeClipLed.Write(distanceVolume > mapping::MAX_DISTANCE);
@@ -216,24 +251,27 @@ int main(void)
 		anchorsSizeSmoothing.setTargetValue(mapping::anchorsSizeScaled(hw.adc.GetFloat(2))); 
 		effectsInternsitySmoothing.setTargetValue(mapping::effectsInternsityScaled(hw.adc.GetFloat(3)));
 		cutoffSmoothing.setTargetValue(mapping::cutoffScaled(hw.adc.GetFloat(4)));
-
+	
 	#ifdef DEBUG 
 		hw.SetLed(distancePitch > 50);
 
 		// hw.PrintLine("Master Volume [* 100]: %d", static_cast<int>(hw.adc.GetFloat(0) * 100));
 		// hw.PrintLine("Intervals Volume Scaled [* 100]: %d", static_cast<int>(mapping::intervalVolumeScaled(hw.adc.GetFloat(1)) * 100));
 		// hw.PrintLine("Anchors Size Scaled: %d", static_cast<int>(mapping::anchorsSizeScaled(hw.adc.GetFloat(2))));
-		// hw.PrintLine("Effects Internsity Scaled [* 100]: %d", static_cast<int>(mapping::effectsInternsityScaled(hw.adc.GetFloat(3)) * 100));
-		// hw.PrintLine("Cutoff Scaled [Hz]: %d", static_cast<int>(mapping::cutoffScaled(hw.adc.GetFloat(4))));
+		hw.PrintLine("Effects Internsity Scaled [* 100]: %d", static_cast<int>(mapping::effectsInternsityScaled(hw.adc.GetFloat(3)) * 100));
+		hw.PrintLine("Cutoff Scaled [Hz]: %d", static_cast<int>(mapping::cutoffScaled(hw.adc.GetFloat(4))));
+
+		// hw.PrintLine("Low Pass Pressed: %d" , static_cast<int>(lowPassButton.Pressed()));
+		// hw.PrintLine("Bit Crush Pressed: %d" , static_cast<int>(overdriveButton.Pressed()));
+		// hw.PrintLine("Phaser Pressed: %d" , static_cast<int>(chorusButton.Pressed()));
 
 		// hw.PrintLine("Pitch distance [mm]: %d", static_cast<int>(distancePitch));
 		// hw.PrintLine("Pitch mapped [Hz]: %d", static_cast<int>(curPitch));
-		hw.PrintLine("Volume distance [mm]: %d", static_cast<int>(distanceVolume));
-		hw.PrintLine("Volume mapped [Hz]: %d", static_cast<int>(curVolume));
+		// hw.PrintLine("Volume distance [mm]: %d", static_cast<int>(distanceVolume));
+		// hw.PrintLine("Volume mapped [Hz]: %d", static_cast<int>(curVolume));
 		// hw.PrintLine("Time to measure distance: %d", timeEnd - timeStart);
 		// TODO implement left/right hand switch 
+		daisy::System::Delay(100);
 	#endif
-
-		daisy::System::Delay(50);
 	}
 }
