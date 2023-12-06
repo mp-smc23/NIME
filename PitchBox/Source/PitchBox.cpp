@@ -27,6 +27,7 @@ Switch sustainButton;
 Switch overdriveButton; 
 Switch lowPassButton;
 Switch chorusButton;
+Switch leftRightButton;
 // Switch button;
 
 // LEDs
@@ -63,8 +64,7 @@ bool isThirdMinorOn{false};
 bool isOctaveOn{false};
 
 // Ultrasonic sensors
-Ultrasonic pitchSensor{seed::D22, seed::D23};
-Ultrasonic volumeSensor{seed::D26, seed::D27};
+Ultrasonic sensors[2] = {{seed::D22, seed::D23}, {seed::D26, seed::D27}};
 
 Smoothing pitchDistanceSmoothing{10};
 Smoothing volumeDistanceSmoothing{10};
@@ -101,6 +101,8 @@ void initButtons(){
     chorusButton.Init(hw.GetPin(7), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
     // button.Init(hw.GetPin(8), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
     sustainButton.Init(hw.GetPin(9), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
+
+    leftRightButton.Init(hw.GetPin(11), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
 }
 
 void initLeds(){
@@ -229,14 +231,15 @@ int main(void)
 		lowPassButton.Debounce();
 		overdriveButton.Debounce();
 		chorusButton.Debounce();
+		leftRightButton.Debounce();
 
 		// Ultrasonic sensors
-		distancePitch = pitchSensor.getDistanceFiltered();
+		distancePitch = sensors[!leftRightButton.Pressed()].getDistanceFiltered();
 		pitchDistanceSmoothing.setTargetValue(distancePitch);
 
 		daisy::System::Delay(10);
 
-		distanceVolume = volumeSensor.getDistanceFiltered();
+		distanceVolume = sensors[leftRightButton.Pressed()].getDistanceFiltered();
 		volumeDistanceSmoothing.setTargetValue(distanceVolume);
 	
 		daisy::System::Delay(10);
