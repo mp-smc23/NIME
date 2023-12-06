@@ -118,6 +118,7 @@ void prepareSideSynth(const std::unique_ptr<SinusoidSynth>& synth, bool& prevSta
 	// if the synth was just turned on/off reset it
 	if(prevState != newState){
 		synth->reset(mainSynth->getCarrierPhase());
+		synth->startAttackPhase();
 		prevState = newState;
 	}
 
@@ -138,10 +139,8 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 		curVolume = mapping::gainFromDistance(volumeDistanceSmoothing.getNextValue());
 	}
 
-
-	const auto equalLoudness = mapping::equalLoudness(curPitch);
+	const auto volume = curVolume * mapping::equalLoudness(curPitch) * masterVolumeSmoothing.getNextValue();
 	const auto intervalsVolume = intervalsVolumeSmoothing.getNextValue();
-	const auto masterVolume = masterVolumeSmoothing.getNextValue();
 
 	mainSynth->setCarrierFrequency(curPitch); 	// update pitch of the main synth
 	mainSynth->setSampleRate(sampleRate);		// update sample rate of the main synth
@@ -164,7 +163,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 		if(isThirdMinorOn) output += thirdMinorSynth->getNextValue() * intervalsVolume;
 		if(isOctaveOn) output += octaveSynth->getNextValue() * intervalsVolume;
 
-		output *= curVolume * equalLoudness * masterVolume; 
+		output *= volume; 
 
 		// write the result to output buffer
 		out[0][i] = out[1][i] = output;

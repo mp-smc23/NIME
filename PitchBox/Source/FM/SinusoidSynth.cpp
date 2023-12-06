@@ -25,7 +25,14 @@ float SinusoidSynth::getNextValue(){
 	// e = A(t)sin[2*pi*fc*t + I1 * sin(2*pi*(fm1+S)*t) + I2 * sin(2*pi*(fm2+S)t)]
 	const auto sinM1 = sin(twoPi * m1Osc.getNextPhaseValue());
 	const auto sinM2 = sin(twoPi * m2Osc.getNextPhaseValue());
-	return sin(twoPi * carrierOsc.getNextPhaseValue() + I1 * sinM1 + I2 * sinM2);
+	const auto output = sin(twoPi * carrierOsc.getNextPhaseValue() + I1 * sinM1 + I2 * sinM2);
+
+	attackEnvelope += attackEnvelopeStep;
+	if(attackEnvelope > 1.f){
+		attackEnvelope = 1.f;
+	}
+	
+	return output * attackEnvelope;
 }
 
 void SinusoidSynth::update(){
@@ -42,4 +49,9 @@ void SinusoidSynth::update(){
 
 float SinusoidSynth::calculateHarmonyFrequency(const float baseFrequency, const HarmonyRatio& ratio){
 	return baseFrequency * ratio.numerator / ratio.denominator;
+}
+
+void SinusoidSynth::startAttackPhase(const float miliseconds){
+	attackEnvelope = 0.f;
+	attackEnvelopeStep = 1 / (miliseconds * 0.001 * sampleRate);
 }

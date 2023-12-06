@@ -30,6 +30,9 @@ public:
 	/// Returns current value of carrier's phase
 	float getCarrierPhase() const { return carrierOsc.getPhase(); }
 
+	/// Tells synth that it is in attack phase and should scale the output for x miliseconds according to internal envolpe
+	void startAttackPhase(const float miliseconds = 10);
+
 private:
 	/// Updates internal variables and oscillators
 	void update();
@@ -46,6 +49,9 @@ private:
 
 	float carrierFrequency{0.f};
 	float sampleRate{0.f};
+
+	float attackEnvelope{1.f};
+	float attackEnvelopeStep{0.f};
 
 	const float twoPi = 2.f * 3.14159265358979323846f;
 };
