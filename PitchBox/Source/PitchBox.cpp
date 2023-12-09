@@ -25,9 +25,9 @@ Switch thirdMinorButton;
 
 Switch sustainButton;
 Switch overdriveButton; 
-Switch lowPassButton;
 Switch chorusButton;
 Switch leftRightButton;
+// Switch button;
 // Switch button;
 
 // LEDs
@@ -90,17 +90,29 @@ void initSynths(){
 }
 
 void initButtons(){
-    octaveButton.Init(hw.GetPin(4), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
-    fifthButton.Init(hw.GetPin(3), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
-    fourthButton.Init(hw.GetPin(2), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
-    thirdButton.Init(hw.GetPin(1), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
-    thirdMinorButton.Init(hw.GetPin(0), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
+    // 4
+	// 2
+	// 0
+	// 1
+	// 3
 
-    lowPassButton.Init(hw.GetPin(5), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
-    overdriveButton.Init(hw.GetPin(6), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
-    chorusButton.Init(hw.GetPin(7), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
-    // button.Init(hw.GetPin(8), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
-    sustainButton.Init(hw.GetPin(9), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
+    thirdButton.Init(hw.GetPin(4), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
+    thirdMinorButton.Init(hw.GetPin(2), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
+    fifthButton.Init(hw.GetPin(0), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
+    fourthButton.Init(hw.GetPin(1), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
+	octaveButton.Init(hw.GetPin(3), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
+
+	// 9
+	// 7
+	// 5
+	// 6
+	// 8
+
+    chorusButton.Init(hw.GetPin(9), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
+    overdriveButton.Init(hw.GetPin(5), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
+    // button.Init(hw.GetPin(5), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
+    // button.Init(hw.GetPin(6), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
+    sustainButton.Init(hw.GetPin(8), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
 
     leftRightButton.Init(hw.GetPin(11), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
 }
@@ -189,7 +201,8 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 		// Effects
 		if(overdriveButton.Pressed()) output = (1 - effectsIntensity) * output + effectsIntensity * overdrive.Process(output);
 		if(chorusButton.Pressed()) output = (1 - effectsIntensity) * output + effectsIntensity * chorus.Process(output);
-		if(lowPassButton.Pressed()) output = lowPass.Process(output);
+		
+		output = lowPass.Process(output);
 
 		// Gain
 		output *= volume; 
@@ -228,7 +241,6 @@ int main(void)
 		thirdButton.Debounce();
 		thirdMinorButton.Debounce();
 		sustainButton.Debounce();
-		lowPassButton.Debounce();
 		overdriveButton.Debounce();
 		chorusButton.Debounce();
 		leftRightButton.Debounce();
@@ -261,12 +273,21 @@ int main(void)
 		// hw.PrintLine("Master Volume [* 100]: %d", static_cast<int>(hw.adc.GetFloat(0) * 100));
 		// hw.PrintLine("Intervals Volume Scaled [* 100]: %d", static_cast<int>(mapping::intervalVolumeScaled(hw.adc.GetFloat(1)) * 100));
 		// hw.PrintLine("Anchors Size Scaled: %d", static_cast<int>(mapping::anchorsSizeScaled(hw.adc.GetFloat(2))));
-		hw.PrintLine("Effects Internsity Scaled [* 100]: %d", static_cast<int>(mapping::effectsInternsityScaled(hw.adc.GetFloat(3)) * 100));
-		hw.PrintLine("Cutoff Scaled [Hz]: %d", static_cast<int>(mapping::cutoffScaled(hw.adc.GetFloat(4))));
+		// hw.PrintLine("Effects Internsity Scaled [* 100]: %d", static_cast<int>(mapping::effectsInternsityScaled(hw.adc.GetFloat(3)) * 100));
+		// hw.PrintLine("Cutoff Scaled [Hz]: %d", static_cast<int>(mapping::cutoffScaled(hw.adc.GetFloat(4))));
 
-		// hw.PrintLine("Low Pass Pressed: %d" , static_cast<int>(lowPassButton.Pressed()));
-		// hw.PrintLine("Bit Crush Pressed: %d" , static_cast<int>(overdriveButton.Pressed()));
-		// hw.PrintLine("Phaser Pressed: %d" , static_cast<int>(chorusButton.Pressed()));
+		hw.PrintLine("overdrive Pressed: %d" , static_cast<int>(overdriveButton.Pressed()));
+		hw.PrintLine("chorus Pressed: %d" , static_cast<int>(chorusButton.Pressed()));
+		hw.PrintLine("sustainButton: %d" , static_cast<int>(sustainButton.Pressed()));
+		hw.PrintLine("leftRightButton: %d" , static_cast<int>(leftRightButton.Pressed()));
+
+		hw.PrintLine("fifthButton: %d" , static_cast<int>(fifthButton.Pressed()));
+		hw.PrintLine("fourthButton: %d" , static_cast<int>(fourthButton.Pressed()));
+		hw.PrintLine("thirdButton: %d" , static_cast<int>(thirdButton.Pressed()));
+		hw.PrintLine("thirdMinorButton: %d" , static_cast<int>(thirdMinorButton.Pressed()));
+		hw.PrintLine("Octave Pressed: %d" , static_cast<int>(octaveButton.Pressed()));
+
+		hw.PrintLine("========================================");
 
 		// hw.PrintLine("Pitch distance [mm]: %d", static_cast<int>(distancePitch));
 		// hw.PrintLine("Pitch mapped [Hz]: %d", static_cast<int>(curPitch));
