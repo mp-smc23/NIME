@@ -86,6 +86,13 @@ void initSynths(){
 	thirdSynth = std::make_unique<SinusoidSynth>(SinusoidSynth::HarmonyRatio{5.f, 4.f});
 	thirdMinorSynth = std::make_unique<SinusoidSynth>(SinusoidSynth::HarmonyRatio{6.f, 5.f});
 	octaveSynth = std::make_unique<SinusoidSynth>(SinusoidSynth::HarmonyRatio{2.f, 1.f});
+
+	mainSynth->init(sampleRate);
+	fifthSynth->init(sampleRate);
+	fourthSynth->init(sampleRate);
+	thirdSynth->init(sampleRate);
+	thirdMinorSynth->init(sampleRate);
+	octaveSynth->init(sampleRate);
 }
 
 void initButtons(){
@@ -202,11 +209,18 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 
 int main(void)
 {
+#ifdef DEBUG
+	hw.StartLog(true);
+#endif
+	hw.PrintLine("success");
     hw.Configure();
     hw.Init();
     sampleRate = hw.AudioSampleRate();
+	hw.PrintLine("ok");
 
 	initSynths();
+	hw.PrintLine("very good");
+
 	initButtons();
 	initLeds();
 	initKnobs();
@@ -214,10 +228,7 @@ int main(void)
  
 	hw.adc.Start(); // Start the ADC
     hw.StartAudio(AudioCallback); // Start audio callback
-
-#ifdef DEBUG
-	hw.StartLog(true);
-#endif
+	hw.PrintLine("i dont believe");
 
 	powerLed.Write(true);
 

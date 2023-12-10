@@ -1,6 +1,7 @@
 #pragma once
 #include "Oscillator.h"
 #include <cmath>
+#include "daisysp.h"
 
 /// FrequencyModulation based synthesizer. Implementation based on the paper
 /// "The Simulation of Natural Instrument Tones using Frequency Modulation with a Complex Modulating Wave
@@ -16,7 +17,7 @@ public:
 	~SinusoidSynth() = default;
 
 	/// Resets Synth's internal oscillator phases to given value
-	void reset(const float startPhase);
+	void init(const float sampleRate);
 
 	/// Sets the base carrier frequency and updates internal values accordingly
 	void setCarrierFrequency(const float carrierFrequency);
@@ -26,9 +27,6 @@ public:
 
 	/// Returns current synthesised value. This function is meant to be run every sample during processing. Automatically updates internal oscillators.
 	float getNextValue();
-
-	/// Returns current value of carrier's phase
-	float getCarrierPhase() const { return carrierOsc.getPhase(); }
 
 	/// Tells synth that it is in attack phase and should scale the output for x miliseconds according to internal envolpe
 	void startAttackPhase(const float miliseconds = 10);
@@ -42,13 +40,7 @@ private:
 	static float calculateHarmonyFrequency(const float baseFrequency, const HarmonyRatio& ratio);
 
 	HarmonyRatio harmonyRatio;
-
-	Oscillator carrierOsc;
-	Oscillator m1Osc;
-	Oscillator m2Osc;
-
-	float I1{0.f};
-	float I2{0.f};
+	daisysp::StringVoice str;
 
 	float carrierFrequency{0.f};
 	float sampleRate{0.f};
