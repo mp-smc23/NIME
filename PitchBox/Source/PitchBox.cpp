@@ -66,8 +66,8 @@ bool isOctaveOn{false};
 // Ultrasonic sensors
 Ultrasonic sensors[2] = {{seed::D22, seed::D23}, {seed::D26, seed::D27}};
 
-Smoothing pitchDistanceSmoothing{10};
-Smoothing volumeDistanceSmoothing{10};
+Smoothing pitchDistanceSmoothing{25};
+Smoothing volumeDistanceSmoothing{25};
 float distancePitch, distanceVolume {1.f};
 float curPitch, curVolume {1.f};
 
@@ -119,8 +119,8 @@ void initButtons(){
 
 void initLeds(){
 	pitchClipLed.Init(seed::D14, daisy::GPIO::Mode::OUTPUT, daisy::GPIO::Pull::NOPULL);
-	powerLed.Init(seed::D13, daisy::GPIO::Mode::OUTPUT, daisy::GPIO::Pull::NOPULL);
-	volumeClipLed.Init(seed::D12, daisy::GPIO::Mode::OUTPUT, daisy::GPIO::Pull::NOPULL);
+	powerLed.Init(seed::D12, daisy::GPIO::Mode::OUTPUT, daisy::GPIO::Pull::NOPULL);
+	volumeClipLed.Init(seed::D13, daisy::GPIO::Mode::OUTPUT, daisy::GPIO::Pull::NOPULL);
 }
 
 void initKnobs(){
@@ -249,12 +249,12 @@ int main(void)
 		distancePitch = sensors[!leftRightButton.Pressed()].getDistanceFiltered();
 		pitchDistanceSmoothing.setTargetValue(distancePitch);
 
-		daisy::System::Delay(10);
+		daisy::System::Delay(5);
 
 		distanceVolume = sensors[leftRightButton.Pressed()].getDistanceFiltered();
 		volumeDistanceSmoothing.setTargetValue(distanceVolume);
 	
-		daisy::System::Delay(10);
+		daisy::System::Delay(5);
 
 		// LEDs
 		pitchClipLed.Write(distancePitch > mapping::MAX_DISTANCE);
@@ -276,16 +276,16 @@ int main(void)
 		// hw.PrintLine("Effects Internsity Scaled [* 100]: %d", static_cast<int>(mapping::effectsInternsityScaled(hw.adc.GetFloat(3)) * 100));
 		// hw.PrintLine("Cutoff Scaled [Hz]: %d", static_cast<int>(mapping::cutoffScaled(hw.adc.GetFloat(4))));
 
-		hw.PrintLine("overdrive Pressed: %d" , static_cast<int>(overdriveButton.Pressed()));
-		hw.PrintLine("chorus Pressed: %d" , static_cast<int>(chorusButton.Pressed()));
-		hw.PrintLine("sustainButton: %d" , static_cast<int>(sustainButton.Pressed()));
-		hw.PrintLine("leftRightButton: %d" , static_cast<int>(leftRightButton.Pressed()));
+		// hw.PrintLine("overdrive Pressed: %d" , static_cast<int>(overdriveButton.Pressed()));
+		// hw.PrintLine("chorus Pressed: %d" , static_cast<int>(chorusButton.Pressed()));
+		// hw.PrintLine("sustainButton: %d" , static_cast<int>(sustainButton.Pressed()));
+		// hw.PrintLine("leftRightButton: %d" , static_cast<int>(leftRightButton.Pressed()));
 
-		hw.PrintLine("fifthButton: %d" , static_cast<int>(fifthButton.Pressed()));
-		hw.PrintLine("fourthButton: %d" , static_cast<int>(fourthButton.Pressed()));
-		hw.PrintLine("thirdButton: %d" , static_cast<int>(thirdButton.Pressed()));
-		hw.PrintLine("thirdMinorButton: %d" , static_cast<int>(thirdMinorButton.Pressed()));
-		hw.PrintLine("Octave Pressed: %d" , static_cast<int>(octaveButton.Pressed()));
+		// hw.PrintLine("fifthButton: %d" , static_cast<int>(fifthButton.Pressed()));
+		// hw.PrintLine("fourthButton: %d" , static_cast<int>(fourthButton.Pressed()));
+		// hw.PrintLine("thirdButton: %d" , static_cast<int>(thirdButton.Pressed()));
+		// hw.PrintLine("thirdMinorButton: %d" , static_cast<int>(thirdMinorButton.Pressed()));
+		// hw.PrintLine("Octave Pressed: %d" , static_cast<int>(octaveButton.Pressed()));
 
 		hw.PrintLine("========================================");
 
@@ -293,9 +293,11 @@ int main(void)
 		// hw.PrintLine("Pitch mapped [Hz]: %d", static_cast<int>(curPitch));
 		// hw.PrintLine("Volume distance [mm]: %d", static_cast<int>(distanceVolume));
 		// hw.PrintLine("Volume mapped [Hz]: %d", static_cast<int>(curVolume));
+
 		// hw.PrintLine("Time to measure distance: %d", timeEnd - timeStart);
+
 		// TODO implement left/right hand switch 
-		daisy::System::Delay(100);
+		// daisy::System::Delay(200);
 	#endif
 	}
 }
