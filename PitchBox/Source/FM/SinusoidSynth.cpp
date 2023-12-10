@@ -1,4 +1,5 @@
 #include "SinusoidSynth.h"
+#include "daisysp.h"
 
 void SinusoidSynth::reset(const float startPhase){
 	carrierOsc.setPhase(startPhase);
@@ -27,12 +28,10 @@ float SinusoidSynth::getNextValue(){
 	const auto sinM2 = sin(twoPi * m2Osc.getNextPhaseValue());
 	const auto output = sin(twoPi * carrierOsc.getNextPhaseValue() + I1 * sinM1 + I2 * sinM2);
 
-	attackEnvelope += attackEnvelopeStep;
-	if(attackEnvelope > 1.f){
-		attackEnvelope = 1.f;
-	}
+	envelope += envelopeStep;
+	envelope = daisysp::fclamp(envelope, 0.f, 1.f);
 	
-	return output * attackEnvelope;
+	return output * envelope;
 }
 
 void SinusoidSynth::update(){
@@ -52,6 +51,9 @@ float SinusoidSynth::calculateHarmonyFrequency(const float baseFrequency, const 
 }
 
 void SinusoidSynth::startAttackPhase(const float miliseconds){
-	attackEnvelope = 0.f;
-	attackEnvelopeStep = 1 / (miliseconds * 0.001 * sampleRate);
+	envelopeStep = 1 / (miliseconds * 0.001 * sampleRate);
+}
+
+void SinusoidSynth::startDecayPhase(const float miliseconds){
+	envelopeStep = -1 / (miliseconds * 0.001 * sampleRate);
 }

@@ -33,6 +33,9 @@ public:
 	/// Tells synth that it is in attack phase and should scale the output for x miliseconds according to internal envolpe
 	void startAttackPhase(const float miliseconds = 10);
 
+	/// Tells synth that it is in decay phase and should scale the output for x miliseconds according to internal envolpe
+	void startDecayPhase(const float miliseconds = 10);
+
 private:
 	/// Updates internal variables and oscillators
 	void update();
@@ -50,8 +53,8 @@ private:
 	float carrierFrequency{0.f};
 	float sampleRate{0.f};
 
-	float attackEnvelope{1.f};
-	float attackEnvelopeStep{0.f};
+	float envelope{1.f};
+	float envelopeStep{0.f};
 
 	const float twoPi = 2.f * 3.14159265358979323846f;
 };
