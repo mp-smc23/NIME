@@ -17,16 +17,15 @@ DaisySeed hw;
 float sampleRate;
 
 // Buttons
-Switch octaveButton;
-Switch fifthButton;
-Switch fourthButton;
-Switch thirdButton;
-Switch thirdMinorButton;
+Switch leftTop[2]; // third mj / chorus
+Switch rightTop[2]; // third min / nothing
+Switch leftMiddle[2]; // fifth / overdrive
+Switch rightMiddle[2]; // forth / nothign
+Switch bottom[2]; // octave / sustain
 
-Switch sustainButton;
-Switch overdriveButton; 
-Switch chorusButton;
 Switch leftRightButton;
+bool isLeftRight;
+
 // Switch button;
 // Switch button;
 
@@ -90,37 +89,25 @@ void initSynths(){
 }
 
 void initButtons(){
-    // 4
-	// 2
-	// 0
-	// 1
-	// 3
+	leftTop[0].Init(hw.GetPin(4), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
+    rightTop[0].Init(hw.GetPin(2), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
+    leftMiddle[0].Init(hw.GetPin(0), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
+    rightMiddle[0].Init(hw.GetPin(1), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
+	bottom[0].Init(hw.GetPin(3), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
 
-    thirdButton.Init(hw.GetPin(4), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
-    thirdMinorButton.Init(hw.GetPin(2), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
-    fifthButton.Init(hw.GetPin(0), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
-    fourthButton.Init(hw.GetPin(1), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
-	octaveButton.Init(hw.GetPin(3), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
-
-	// 9
-	// 7
-	// 5
-	// 6
-	// 8
-
-    chorusButton.Init(hw.GetPin(9), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
-    overdriveButton.Init(hw.GetPin(5), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
-    // button.Init(hw.GetPin(5), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
-    // button.Init(hw.GetPin(6), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
-    sustainButton.Init(hw.GetPin(8), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
+    leftTop[1].Init(hw.GetPin(9), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
+    rightTop[1].Init(hw.GetPin(5), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
+    leftMiddle[1].Init(hw.GetPin(5), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
+    rightMiddle[1].Init(hw.GetPin(6), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
+    bottom[1].Init(hw.GetPin(8), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
 
     leftRightButton.Init(hw.GetPin(11), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
 }
 
 void initLeds(){
-	pitchClipLed.Init(seed::D14, daisy::GPIO::Mode::OUTPUT, daisy::GPIO::Pull::NOPULL);
+	pitchClipLed.Init(seed::D13, daisy::GPIO::Mode::OUTPUT, daisy::GPIO::Pull::NOPULL);
 	powerLed.Init(seed::D12, daisy::GPIO::Mode::OUTPUT, daisy::GPIO::Pull::NOPULL);
-	volumeClipLed.Init(seed::D13, daisy::GPIO::Mode::OUTPUT, daisy::GPIO::Pull::NOPULL);
+	volumeClipLed.Init(seed::D14, daisy::GPIO::Mode::OUTPUT, daisy::GPIO::Pull::NOPULL);
 }
 
 void initKnobs(){
@@ -149,9 +136,10 @@ void initEffects(){
 void prepareSideSynth(const std::unique_ptr<SinusoidSynth>& synth, bool& prevState, const bool newState){
 	// if the synth was just turned on/off reset it
 	if(prevState != newState){
-		synth->reset(mainSynth->getCarrierPhase());
-		synth->startAttackPhase();
 		prevState = newState;
+
+		if(newState) synth->startAttackPhase();
+		else synth->startDecayPhase();
 	}
 
 	if(!newState) return; // synth is turned off, nothing to do
@@ -167,7 +155,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 {
 	// Get and/or calculate values for processing
 	curPitch = mapping::pitchFromDistance(pitchDistanceSmoothing.getNextValue(), anchorsSizeSmoothing.getNextValue());	
-	if(!sustainButton.Pressed()) {
+	if(!bottom[isLeftRight].Pressed()) {
 		curVolume = mapping::gainFromDistance(volumeDistanceSmoothing.getNextValue());
 	}
 
@@ -178,11 +166,11 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 	mainSynth->setSampleRate(sampleRate);		// update sample rate of the main synth
 
 	// prapare all side synths
-	prepareSideSynth(fifthSynth, isFifthOn, fifthButton.Pressed()); 
-	prepareSideSynth(fourthSynth, isFourthOn, fourthButton.Pressed()); 
-	prepareSideSynth(thirdSynth, isThirdOn, thirdButton.Pressed()); 
-	prepareSideSynth(thirdMinorSynth, isThirdMinorOn, thirdMinorButton.Pressed()); 
-	prepareSideSynth(octaveSynth, isOctaveOn, octaveButton.Pressed());
+	prepareSideSynth(fifthSynth, isFifthOn, leftMiddle[!isLeftRight].Pressed()); 
+	prepareSideSynth(fourthSynth, isFourthOn, rightMiddle[!isLeftRight].Pressed()); 
+	prepareSideSynth(thirdSynth, isThirdOn, leftTop[!isLeftRight].Pressed()); 
+	prepareSideSynth(thirdMinorSynth, isThirdMinorOn, rightTop[!isLeftRight].Pressed()); 
+	prepareSideSynth(octaveSynth, isOctaveOn, bottom[!isLeftRight].Pressed());
 
 	lowPass.SetFreq(cutoffSmoothing.getNextValue());
 	const auto effectsIntensity = effectsInternsitySmoothing.getNextValue();
@@ -191,16 +179,16 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 		// get current sinusoid value and multiply it by desired gain
 		auto output = mainSynth->getNextValue();
 
-		// add intervals if they're turned on
-		if(isFifthOn) output += fifthSynth->getNextValue() * intervalsVolume;
-		if(isFourthOn) output += fourthSynth->getNextValue() * intervalsVolume;
-		if(isThirdOn) output += thirdSynth->getNextValue() * intervalsVolume;
-		if(isThirdMinorOn) output += thirdMinorSynth->getNextValue() * intervalsVolume;
-		if(isOctaveOn) output += octaveSynth->getNextValue() * intervalsVolume;
+		// add intervals
+		output += fifthSynth->getNextValue() * intervalsVolume;
+		output += fourthSynth->getNextValue() * intervalsVolume;
+		output += thirdSynth->getNextValue() * intervalsVolume;
+		output += thirdMinorSynth->getNextValue() * intervalsVolume;
+		output += octaveSynth->getNextValue() * intervalsVolume;
 
 		// Effects
-		if(overdriveButton.Pressed()) output = (1 - effectsIntensity) * output + effectsIntensity * overdrive.Process(output);
-		if(chorusButton.Pressed()) output = (1 - effectsIntensity) * output + effectsIntensity * chorus.Process(output);
+		if(leftMiddle[isLeftRight].Pressed()) output = (1 - effectsIntensity) * output + effectsIntensity * overdrive.Process(output);
+		if(leftTop[isLeftRight].Pressed()) output = (1 - effectsIntensity) * output + effectsIntensity * chorus.Process(output);
 		
 		output = lowPass.Process(output);
 
@@ -235,23 +223,27 @@ int main(void)
 
     while(1) {
 		// Buttons
-		octaveButton.Debounce();
-		fifthButton.Debounce();
-		fourthButton.Debounce();
-		thirdButton.Debounce();
-		thirdMinorButton.Debounce();
-		sustainButton.Debounce();
-		overdriveButton.Debounce();
-		chorusButton.Debounce();
+		leftTop[0].Debounce();
+		leftTop[1].Debounce();
+		rightTop[0].Debounce();
+		rightTop[1].Debounce();
+		leftMiddle[0].Debounce();
+		leftMiddle[1].Debounce();
+		rightMiddle[0].Debounce();
+		rightMiddle[1].Debounce();
+		bottom[0].Debounce();
+		bottom[1].Debounce();
 		leftRightButton.Debounce();
 
+		isLeftRight = leftRightButton.Pressed();
+
 		// Ultrasonic sensors
-		distancePitch = sensors[!leftRightButton.Pressed()].getDistanceFiltered(0.5f, 6000U); // 6k microsec timeout ~ 1200 mm
+		distancePitch = sensors[!isLeftRight].getDistanceFiltered(0.5f, 6000U); // 6k microsec timeout ~ 1200 mm
 		pitchDistanceSmoothing.setTargetValue(distancePitch);
 
 		daisy::System::Delay(5);
 
-		distanceVolume = sensors[leftRightButton.Pressed()].getDistanceFiltered(0.5f, 6000U); // 6k microsec timeout ~ 1200 mm
+		distanceVolume = sensors[isLeftRight].getDistanceFiltered(0.5f, 6000U); // 6k microsec timeout ~ 1200 mm
 		volumeDistanceSmoothing.setTargetValue(distanceVolume);
 	
 		daisy::System::Delay(5);
@@ -294,7 +286,6 @@ int main(void)
 
 		hw.PrintLine("Time to measure distance: %d", timeEnd - timeStart);
 
-		// TODO implement left/right hand switch 
 		daisy::System::Delay(1000);
 		hw.PrintLine("========================================");
 	#endif
