@@ -2,7 +2,7 @@
 
 namespace mapping{
     const float MAX_DISTANCE = 1000.f;
-    const float MIN_DISTANCE = 100.f;
+    const float MIN_DISTANCE = 200.f;
 
     static float indexFromDistance(const float distance, const float stepWidth = 20.f)
     {

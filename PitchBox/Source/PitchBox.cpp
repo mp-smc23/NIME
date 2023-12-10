@@ -246,12 +246,12 @@ int main(void)
 		leftRightButton.Debounce();
 
 		// Ultrasonic sensors
-		distancePitch = sensors[!leftRightButton.Pressed()].getDistanceFiltered();
+		distancePitch = sensors[!leftRightButton.Pressed()].getDistanceFiltered(0.5f, 6000U); // 6k microsec timeout ~ 1200 mm
 		pitchDistanceSmoothing.setTargetValue(distancePitch);
 
 		daisy::System::Delay(5);
 
-		distanceVolume = sensors[leftRightButton.Pressed()].getDistanceFiltered();
+		distanceVolume = sensors[leftRightButton.Pressed()].getDistanceFiltered(0.5f, 6000U); // 6k microsec timeout ~ 1200 mm
 		volumeDistanceSmoothing.setTargetValue(distanceVolume);
 	
 		daisy::System::Delay(5);
@@ -268,8 +268,6 @@ int main(void)
 		cutoffSmoothing.setTargetValue(mapping::cutoffScaled(hw.adc.GetFloat(4)));
 	
 	#ifdef DEBUG 
-		hw.SetLed(distancePitch > 50);
-
 		// hw.PrintLine("Master Volume [* 100]: %d", static_cast<int>(hw.adc.GetFloat(0) * 100));
 		// hw.PrintLine("Intervals Volume Scaled [* 100]: %d", static_cast<int>(mapping::intervalVolumeScaled(hw.adc.GetFloat(1)) * 100));
 		// hw.PrintLine("Anchors Size Scaled: %d", static_cast<int>(mapping::anchorsSizeScaled(hw.adc.GetFloat(2))));
@@ -287,17 +285,18 @@ int main(void)
 		// hw.PrintLine("thirdMinorButton: %d" , static_cast<int>(thirdMinorButton.Pressed()));
 		// hw.PrintLine("Octave Pressed: %d" , static_cast<int>(octaveButton.Pressed()));
 
-		hw.PrintLine("========================================");
 
-		// hw.PrintLine("Pitch distance [mm]: %d", static_cast<int>(distancePitch));
+		hw.PrintLine("Pitch distance [mm]: %d", static_cast<int>(distancePitch));
+		hw.PrintLine("Volume distance [mm]: %d", static_cast<int>(distanceVolume));
+
 		// hw.PrintLine("Pitch mapped [Hz]: %d", static_cast<int>(curPitch));
-		// hw.PrintLine("Volume distance [mm]: %d", static_cast<int>(distanceVolume));
 		// hw.PrintLine("Volume mapped [Hz]: %d", static_cast<int>(curVolume));
 
-		// hw.PrintLine("Time to measure distance: %d", timeEnd - timeStart);
+		hw.PrintLine("Time to measure distance: %d", timeEnd - timeStart);
 
 		// TODO implement left/right hand switch 
-		// daisy::System::Delay(200);
+		daisy::System::Delay(1000);
+		hw.PrintLine("========================================");
 	#endif
 	}
 }

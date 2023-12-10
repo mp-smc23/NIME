@@ -12,7 +12,7 @@ class Ultrasonic {
       trigPin.Init(trigger, daisy::GPIO::Mode::OUTPUT, daisy::GPIO::Pull::NOPULL, daisy::GPIO::Speed::VERY_HIGH); // set it like an output
     }
 
-    float getDistance(const uint32_t timeout = 10000);  
+    float getDistance(const uint32_t timeout);  
     float getDistanceFiltered(const float alpha = .5f, const uint32_t timeout = 10000);
   private:
     uint32_t pulseIn(const uint32_t state, const uint32_t timeout);

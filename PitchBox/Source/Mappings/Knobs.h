@@ -3,7 +3,7 @@
 
 namespace mapping {
     
-    const float MIN_INTERVAL_VOLUME = ::pow(10.f, (-40) * 0.05f); // -40dB
+    const float MIN_INTERVAL_VOLUME = ::pow(10.f, (-30) * 0.05f); // -40dB
     const float MAX_INTERVAL_VOLUME = 1; // 1.0 gain == 0 dB
 
     float intervalVolumeScaled(const float value0To1){
