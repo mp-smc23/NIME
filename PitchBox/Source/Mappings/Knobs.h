@@ -10,7 +10,7 @@ namespace mapping {
         return daisysp::fmap(value0To1, MIN_INTERVAL_VOLUME, MAX_INTERVAL_VOLUME);
     }
 
-    const float MIN_ANCHORS_SIZE = 20; 
+    const float MIN_ANCHORS_SIZE = 0; 
     const float MAX_ANCHORS_SIZE = 65; 
 
     float anchorsSizeScaled(const float value0To1){

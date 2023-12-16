@@ -95,10 +95,10 @@ void initButtons(){
     rightMiddle[0].Init(hw.GetPin(1), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
 	bottom[0].Init(hw.GetPin(3), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
 
-    leftTop[1].Init(hw.GetPin(9), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
-    rightTop[1].Init(hw.GetPin(5), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
-    leftMiddle[1].Init(hw.GetPin(5), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
-    rightMiddle[1].Init(hw.GetPin(6), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
+    leftTop[1].Init(hw.GetPin(7), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
+    rightTop[1].Init(hw.GetPin(9), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
+    leftMiddle[1].Init(hw.GetPin(6), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
+    rightMiddle[1].Init(hw.GetPin(5), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
     bottom[1].Init(hw.GetPin(8), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_INVERTED, Switch::Pull::PULL_UP);
 
     leftRightButton.Init(hw.GetPin(11), 1000, Switch::Type::TYPE_MOMENTARY, Switch::Polarity::POLARITY_NORMAL, Switch::Pull::PULL_UP);
@@ -273,20 +273,20 @@ int main(void)
 
 		// hw.PrintLine("fifthButton: %d" , static_cast<int>(fifthButton.Pressed()));
 		// hw.PrintLine("fourthButton: %d" , static_cast<int>(fourthButton.Pressed()));
-		// hw.PrintLine("thirdButton: %d" , static_cast<int>(thirdButton.Pressed()));
-		// hw.PrintLine("thirdMinorButton: %d" , static_cast<int>(thirdMinorButton.Pressed()));
+		// hw.PrintLine("thirdButton: %d" , static_cast<int>(leftTop[!isLeftRight].Pressed()));
+		hw.PrintLine("thirdMinorButton: %d" , static_cast<int>(rightTop[!isLeftRight].Pressed()));
 		// hw.PrintLine("Octave Pressed: %d" , static_cast<int>(octaveButton.Pressed()));
 
 
-		hw.PrintLine("Pitch distance [mm]: %d", static_cast<int>(distancePitch));
-		hw.PrintLine("Volume distance [mm]: %d", static_cast<int>(distanceVolume));
+		// hw.PrintLine("Pitch distance [mm]: %d", static_cast<int>(distancePitch));
+		// hw.PrintLine("Volume distance [mm]: %d", static_cast<int>(distanceVolume));
 
 		// hw.PrintLine("Pitch mapped [Hz]: %d", static_cast<int>(curPitch));
 		// hw.PrintLine("Volume mapped [Hz]: %d", static_cast<int>(curVolume));
 
-		hw.PrintLine("Time to measure distance: %d", timeEnd - timeStart);
+		// hw.PrintLine("Time to measure distance: %d", timeEnd - timeStart);
 
-		daisy::System::Delay(1000);
+		daisy::System::Delay(50);
 		hw.PrintLine("========================================");
 	#endif
 	}
