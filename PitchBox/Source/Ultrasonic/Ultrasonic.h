@@ -15,7 +15,7 @@ class Ultrasonic {
     float getDistance(const uint32_t timeout);  
     float getDistanceFiltered(const float alpha = .5f, const uint32_t timeout = 10000);
   private:
-    uint32_t pulseIn(const uint32_t state, const uint32_t timeout);
+    int32_t pulseIn(const uint32_t state, const uint32_t timeout);
 
     daisy::GPIO trigPin; // generic gpio object
     daisy::GPIO echoPin; // generic gpio object

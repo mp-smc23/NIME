@@ -18,8 +18,8 @@ float sampleRate;
 
 // Buttons
 Switch leftTop[2]; // third mj / chorus
-Switch rightTop[2]; // third min / nothing
-Switch leftMiddle[2]; // fifth / overdrive
+Switch rightTop[2]; // third min / overdrive
+Switch leftMiddle[2]; // fifth / mute
 Switch rightMiddle[2]; // forth / nothign
 Switch bottom[2]; // octave / sustain
 
@@ -155,7 +155,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 {
 	// Get and/or calculate values for processing
 	curPitch = mapping::pitchFromDistance(pitchDistanceSmoothing.getNextValue(), anchorsSizeSmoothing.getNextValue());	
-	if(!bottom[isLeftRight].Pressed()) {
+	if(!bottom[isLeftRight].Pressed()) { // Sustain Mode
 		curVolume = mapping::gainFromDistance(volumeDistanceSmoothing.getNextValue());
 	}
 
@@ -187,7 +187,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 		output += octaveSynth->getNextValue() * intervalsVolume;
 
 		// Effects
-		if(leftMiddle[isLeftRight].Pressed()) output = (1 - effectsIntensity) * output + effectsIntensity * overdrive.Process(output);
+		if(rightTop[isLeftRight].Pressed()) output = (1 - effectsIntensity) * output + effectsIntensity * overdrive.Process(output);
 		if(leftTop[isLeftRight].Pressed()) output = (1 - effectsIntensity) * output + effectsIntensity * chorus.Process(output);
 		
 		output = lowPass.Process(output);
@@ -239,21 +239,21 @@ int main(void)
 
 		// Ultrasonic sensors
 		distancePitch = sensors[!isLeftRight].getDistanceFiltered(0.5f, 6000U); // 6k microsec timeout ~ 1200 mm
-		pitchDistanceSmoothing.setTargetValue(distancePitch);
+		pitchDistanceSmoothing.setTargetValue(distancePitch < 0.f ? 0.f : distancePitch);
 
 		daisy::System::Delay(5);
 
 		distanceVolume = sensors[isLeftRight].getDistanceFiltered(0.5f, 6000U); // 6k microsec timeout ~ 1200 mm
-		volumeDistanceSmoothing.setTargetValue(distanceVolume);
+		volumeDistanceSmoothing.setTargetValue(distanceVolume < 0.f ? 0.f : distanceVolume);
 	
 		daisy::System::Delay(5);
 
 		// LEDs
-		pitchClipLed.Write(distancePitch > mapping::MAX_DISTANCE);
-		volumeClipLed.Write(distanceVolume > mapping::MAX_DISTANCE);
+		pitchClipLed.Write(distancePitch > mapping::MAX_DISTANCE || distancePitch < 0);
+		volumeClipLed.Write(distanceVolume > mapping::MAX_DISTANCE || distanceVolume < 0);
 
 		// Knobs
-    	masterVolumeSmoothing.setTargetValue(hw.adc.GetFloat(0));
+    	masterVolumeSmoothing.setTargetValue(leftMiddle[isLeftRight].Pressed() ? 0.f : hw.adc.GetFloat(0));
 		intervalsVolumeSmoothing.setTargetValue(mapping::intervalVolumeScaled(hw.adc.GetFloat(1)));
 		anchorsSizeSmoothing.setTargetValue(mapping::anchorsSizeScaled(hw.adc.GetFloat(2))); 
 		effectsInternsitySmoothing.setTargetValue(mapping::effectsInternsityScaled(hw.adc.GetFloat(3)));
@@ -274,12 +274,12 @@ int main(void)
 		// hw.PrintLine("fifthButton: %d" , static_cast<int>(fifthButton.Pressed()));
 		// hw.PrintLine("fourthButton: %d" , static_cast<int>(fourthButton.Pressed()));
 		// hw.PrintLine("thirdButton: %d" , static_cast<int>(leftTop[!isLeftRight].Pressed()));
-		hw.PrintLine("thirdMinorButton: %d" , static_cast<int>(rightTop[!isLeftRight].Pressed()));
+		// hw.PrintLine("thirdMinorButton: %d" , static_cast<int>(rightTop[!isLeftRight].Pressed()));
 		// hw.PrintLine("Octave Pressed: %d" , static_cast<int>(octaveButton.Pressed()));
 
 
-		// hw.PrintLine("Pitch distance [mm]: %d", static_cast<int>(distancePitch));
-		// hw.PrintLine("Volume distance [mm]: %d", static_cast<int>(distanceVolume));
+		hw.PrintLine("Pitch distance [mm]: %d", static_cast<int>(distancePitch));
+		hw.PrintLine("Volume distance [mm]: %d", static_cast<int>(distanceVolume));
 
 		// hw.PrintLine("Pitch mapped [Hz]: %d", static_cast<int>(curPitch));
 		// hw.PrintLine("Volume mapped [Hz]: %d", static_cast<int>(curVolume));
