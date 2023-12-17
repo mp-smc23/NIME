@@ -3,15 +3,19 @@
 
 namespace mapping {
     
-    const float MIN_INTERVAL_VOLUME = ::pow(10.f, (-30) * 0.05f); // -40dB
-    const float MAX_INTERVAL_VOLUME = 1; // 1.0 gain == 0 dB
+    const float MIN_INTERVAL_VOLUME = ::pow(10.f, (-30) * 0.05f); // -30dB
+    const float MID_INTERVAL_VOLUME = 1; // 1.0 gain == 0 dB
+    const float MAX_INTERVAL_VOLUME = 2; // 2.0 gain == 3 dB
 
     float intervalVolumeScaled(const float value0To1){
-        return daisysp::fmap(value0To1, MIN_INTERVAL_VOLUME, MAX_INTERVAL_VOLUME);
+        if(value0To1 < 1.f/2.f){
+            return daisysp::fmap(value0To1 * 2.f, MIN_INTERVAL_VOLUME, MID_INTERVAL_VOLUME);
+        }
+        return daisysp::fmap((value0To1 - 1.f/2.f) * 2.f, MID_INTERVAL_VOLUME, MAX_INTERVAL_VOLUME); // 0.5 - 1 
     }
 
     const float MIN_ANCHORS_SIZE = 0; 
-    const float MAX_ANCHORS_SIZE = 65; 
+    const float MAX_ANCHORS_SIZE = 66; 
 
     float anchorsSizeScaled(const float value0To1){
         return daisysp::fmap(value0To1, MIN_ANCHORS_SIZE, MAX_ANCHORS_SIZE);

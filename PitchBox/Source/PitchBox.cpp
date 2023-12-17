@@ -261,7 +261,7 @@ int main(void)
 	
 	#ifdef DEBUG 
 		// hw.PrintLine("Master Volume [* 100]: %d", static_cast<int>(hw.adc.GetFloat(0) * 100));
-		// hw.PrintLine("Intervals Volume Scaled [* 100]: %d", static_cast<int>(mapping::intervalVolumeScaled(hw.adc.GetFloat(1)) * 100));
+		hw.PrintLine("Intervals Volume Scaled [* 100]: %d", static_cast<int>(mapping::intervalVolumeScaled(hw.adc.GetFloat(1)) * 100));
 		// hw.PrintLine("Anchors Size Scaled: %d", static_cast<int>(mapping::anchorsSizeScaled(hw.adc.GetFloat(2))));
 		// hw.PrintLine("Effects Internsity Scaled [* 100]: %d", static_cast<int>(mapping::effectsInternsityScaled(hw.adc.GetFloat(3)) * 100));
 		// hw.PrintLine("Cutoff Scaled [Hz]: %d", static_cast<int>(mapping::cutoffScaled(hw.adc.GetFloat(4))));
@@ -278,8 +278,9 @@ int main(void)
 		// hw.PrintLine("Octave Pressed: %d" , static_cast<int>(octaveButton.Pressed()));
 
 
-		hw.PrintLine("Pitch distance [mm]: %d", static_cast<int>(distancePitch));
-		hw.PrintLine("Volume distance [mm]: %d", static_cast<int>(distanceVolume));
+		// hw.PrintLine("Pitch [hz]: %d", static_cast<int>(mapping::pitchFromDistance(distancePitch, mapping::anchorsSizeScaled(hw.adc.GetFloat(2)))));
+		// hw.PrintLine("note index: %d", static_cast<int>(mapping::indexFromDistance(distancePitch, mapping::anchorsSizeScaled(hw.adc.GetFloat(2)))));
+		// hw.PrintLine("Volume distance [mm]: %d", static_cast<int>(distanceVolume));
 
 		// hw.PrintLine("Pitch mapped [Hz]: %d", static_cast<int>(curPitch));
 		// hw.PrintLine("Volume mapped [Hz]: %d", static_cast<int>(curVolume));

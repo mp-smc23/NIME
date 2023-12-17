@@ -8,7 +8,7 @@ namespace mapping{
     {
         const float xOffset = MIN_DISTANCE;
         const float xInterval = MAX_DISTANCE - MIN_DISTANCE;
-        const int firstNote = 40; // # E3
+        const int firstNote = 48; // # E3
         const int lastNote = 60; // # C5
 
         if(distance < xOffset) return firstNote;
