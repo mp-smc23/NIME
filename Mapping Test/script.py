@@ -9,12 +9,13 @@ def pitch_from_index(i):
     return 2**((i-57)/12)*440
 
 def note_from_distance(i):
-    sw = 20 # step width in mm
-    x_offset = 100
-    x_interval = 900
-    first_note = 40 # E3
+    x_offset = 200
+    x_interval = 800
+    first_note = 48 # C4
     last_note = 60 # C5
     ss = x_interval / (last_note - first_note)
+    sw = ss * 1 # step width in mm
+    epsilon = 0.000001 #10^(-6)
     if i < x_offset:
         return first_note
     elif i >= x_offset + x_interval:
@@ -22,10 +23,13 @@ def note_from_distance(i):
     else:
         d = i - x_offset
         if d % ss < sw / 2:
-            return first_note + int(d / ss)
+            # first plateau
+            return first_note + int((d+epsilon) / ss)
         elif d % ss >= ss - sw / 2:
-            return first_note + int(d / ss) + 1
+            # second higher plateau
+            return first_note + int((d-epsilon) / ss) + 1
         else:
+            # transition through lower plateau
             return first_note + int(d / ss) + (d % ss - sw / 2) * 1 / (ss - sw)
 
 
@@ -43,17 +47,18 @@ def loudness_comp(p):
 # https://github.com/andrewjhunt/equal-loudness
 
 
-fig, axs = plt.subplots(3)
-fig.suptitle('duh')
+fig, axs = plt.subplots(ncols=1, figsize=(8, 5))
+#fig.suptitle('duh')
 
-
+'''
 notes = []
 pitches = []
 for i in range (30, 70):
     notes.append(note_from_index(i))
     pitches.append(pitch_from_index(i))
-axs[0].plot(notes, pitches)
-axs[0].set_title("note vs. pitch [Hz]")
+axs.plot(notes, pitches)
+axs.set_title("note vs. pitch [Hz]")
+'''
 
 
 pitches = []
@@ -62,18 +67,20 @@ for i in range (0, 100):
     pitch = pitch_from_index(i)
     pitches.append(pitch)
     gains.append(loudness_comp(pitch))
-axs[1].plot(pitches, gains)
-axs[1].set_xscale('log')
-axs[1].set_title("pitches [Hz] vs. gains [dB]")
+axs.plot(pitches, gains)
+axs.set_xscale('log')
+#axs[0].set_title("pitch [Hz] vs. gain [dB]")
+axs.grid(True)
 
 
-distances = []
+'''distances = []
 mapped_pitches = []
-for i in range (0, 1100):
+for i in range (100, 1100):
     distances.append(i)
     mapped_pitches.append(pitch_from_index(note_from_distance(i)))
-axs[2].plot(distances, mapped_pitches)
-axs[2].set_title("distances [mm] vs. pitches [Hz]")
+axs.plot(distances, mapped_pitches)
+#axs.set_title("Distance [mm] vs. pitch [Hz]")
+axs.grid(True)'''
 
-
+plt.savefig('filename.png', dpi=600)
 plt.show()
