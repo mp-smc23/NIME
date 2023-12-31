@@ -1,33 +1,3 @@
-/*
-    Ultrasonic.h
-    A library for ultrasonic ranger
-
-    Copyright (c) 2012 seeed technology inc.
-    Website    : www.seeed.cc
-    Author     : LG, FrankieChu
-    Create Time: Jan 17,2013
-    Change Log :
-
-    The MIT License (MIT)
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in
-    all copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-    THE SOFTWARE.
-*/
 #ifndef Ultrasonic_H
 #define Ultrasonic_H
 
@@ -36,16 +6,21 @@
 
 class Ultrasonic {
   public:
-    Ultrasonic(daisy::Pin pin);
-    long MeasureInCentimeters(uint32_t timeout = 1000000L);
-    long MeasureInMillimeters(uint32_t timeout = 1000000L);
-    long MeasureInInches(uint32_t timeout = 1000000L);
-    uint32_t pulseIn( uint32_t state, uint32_t timeout = 1000000L);
+    Ultrasonic(daisy::Pin trigger, daisy::Pin echo)
+    {
+      echoPin.Init(echo, daisy::GPIO::Mode::INPUT, daisy::GPIO::Pull::NOPULL, daisy::GPIO::Speed::VERY_HIGH); // set it like an input
+      trigPin.Init(trigger, daisy::GPIO::Mode::OUTPUT, daisy::GPIO::Pull::NOPULL, daisy::GPIO::Speed::VERY_HIGH); // set it like an output
+    }
+
+    float getDistance(const uint32_t timeout);  
+    float getDistanceFiltered(const float alpha = .5f, const uint32_t timeout = 10000);
   private:
-    daisy::Pin _pin;//pin number of Arduino that is connected with SIG pin of Ultrasonic Ranger.
-    daisy::GPIO pin; // generic gpio object
-    
-    long duration(uint32_t timeout = 1000000L);
+    int32_t pulseIn(const uint32_t state, const uint32_t timeout);
+
+    daisy::GPIO trigPin; // generic gpio object
+    daisy::GPIO echoPin; // generic gpio object
+
+    float distance = 0.f;
 };
 
 #endif

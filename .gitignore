@@ -110,3 +110,7 @@ extras/Projucer/JUCECompileEngine.dylib
 CMakeUserPresets.json
 
 PitchBox/build/
+
+PitchBox/.vscode/settings.json
+
+.vscode/settings.json

@@ -7,7 +7,12 @@
 /// by  Bill Schottstaedt
 class SinusoidSynth {
 public:
-	SinusoidSynth() = default;
+	struct HarmonyRatio {
+		float numerator;
+		float denominator;
+	};
+
+	SinusoidSynth(HarmonyRatio ratio = {1.f, 1.f}) : harmonyRatio(ratio) {};
 	~SinusoidSynth() = default;
 
 	/// Resets Synth's internal oscillator phases to given value
@@ -25,10 +30,19 @@ public:
 	/// Returns current value of carrier's phase
 	float getCarrierPhase() const { return carrierOsc.getPhase(); }
 
+	/// Tells synth that it is in attack phase and should scale the output for x miliseconds according to internal envolpe
+	void startAttackPhase(const float miliseconds = 10);
+
+	/// Tells synth that it is in decay phase and should scale the output for x miliseconds according to internal envolpe
+	void startDecayPhase(const float miliseconds = 10);
+
 private:
 	/// Updates internal variables and oscillators
 	void update();
-	
+	static float calculateHarmonyFrequency(const float baseFrequency, const HarmonyRatio& ratio);
+
+	HarmonyRatio harmonyRatio;
+
 	Oscillator carrierOsc;
 	Oscillator m1Osc;
 	Oscillator m2Osc;
@@ -38,6 +52,9 @@ private:
 
 	float carrierFrequency{0.f};
 	float sampleRate{0.f};
+
+	float envelope{1.f};
+	float envelopeStep{0.f};
 
 	const float twoPi = 2.f * 3.14159265358979323846f;
 };
