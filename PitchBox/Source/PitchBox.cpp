@@ -133,6 +133,7 @@ void initEffects(){
 	chorus.SetLfoFreq(6.5f);
 }
 
+/// Updates the interval synths' states. Turns them on and off depending on the current and previous states and initializes the attack and decay phases accordingly.
 void prepareSideSynth(const std::unique_ptr<SinusoidSynth>& synth, bool& prevState, const bool newState){
 	// if the synth was just turned on/off reset it
 	if(prevState != newState){
@@ -155,42 +156,42 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 {
 	// Get and/or calculate values for processing
 	curPitch = mapping::pitchFromDistance(pitchDistanceSmoothing.getNextValue(), anchorsSizeSmoothing.getNextValue());	
-	if(!bottom[isLeftRight].Pressed()) { // Sustain Mode
+	if(!bottom[isLeftRight].Pressed()) { // If not in the Sustain Mode, update curVolume value
 		curVolume = mapping::gainFromDistance(volumeDistanceSmoothing.getNextValue());
 	}
 
-	const auto volume = curVolume * mapping::equalLoudness(curPitch) * masterVolumeSmoothing.getNextValue();
+	const auto volume = curVolume * mapping::equalLoudness(curPitch) * masterVolumeSmoothing.getNextValue(); // final volume
 	const auto intervalsVolume = intervalsVolumeSmoothing.getNextValue();
 
 	mainSynth->setCarrierFrequency(curPitch); 	// update pitch of the main synth
 	mainSynth->setSampleRate(sampleRate);		// update sample rate of the main synth
 
-	// prapare all side synths
+	// prapare all interval synths
 	prepareSideSynth(fifthSynth, isFifthOn, leftMiddle[!isLeftRight].Pressed()); 
 	prepareSideSynth(fourthSynth, isFourthOn, rightMiddle[!isLeftRight].Pressed()); 
 	prepareSideSynth(thirdSynth, isThirdOn, leftTop[!isLeftRight].Pressed()); 
 	prepareSideSynth(thirdMinorSynth, isThirdMinorOn, rightTop[!isLeftRight].Pressed()); 
 	prepareSideSynth(octaveSynth, isOctaveOn, bottom[!isLeftRight].Pressed());
 
-	lowPass.SetFreq(cutoffSmoothing.getNextValue());
-	const auto effectsIntensity = effectsInternsitySmoothing.getNextValue();
+	lowPass.SetFreq(cutoffSmoothing.getNextValue()); // set new lowPass cutoff frequency
+	const auto effectsIntensity = effectsInternsitySmoothing.getNextValue(); // get current effects intensity value
 
 	for(size_t i = 0; i < size; i++) {
-		// get current sinusoid value and multiply it by desired gain
+		// get current sinusoid value
 		auto output = mainSynth->getNextValue();
 
-		// add intervals
+		// Add intervals scaled by the intervals volume
 		output += fifthSynth->getNextValue() * intervalsVolume;
 		output += fourthSynth->getNextValue() * intervalsVolume;
 		output += thirdSynth->getNextValue() * intervalsVolume;
 		output += thirdMinorSynth->getNextValue() * intervalsVolume;
 		output += octaveSynth->getNextValue() * intervalsVolume;
 
-		// Effects
+		// Effects - effectsIntensity acts as a dry/wet
 		if(rightTop[isLeftRight].Pressed()) output = (1 - effectsIntensity) * output + effectsIntensity * overdrive.Process(output);
 		if(leftTop[isLeftRight].Pressed()) output = (1 - effectsIntensity) * output + effectsIntensity * chorus.Process(output);
 		
-		output = lowPass.Process(output);
+		output = lowPass.Process(output); // Process the output through a low pass filter
 
 		// Gain
 		output *= volume; 
@@ -202,6 +203,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 
 int main(void)
 {
+	// Initialize all the hardware
     hw.Configure();
     hw.Init();
     sampleRate = hw.AudioSampleRate();
@@ -222,7 +224,7 @@ int main(void)
 	powerLed.Write(true);
 
     while(1) {
-		// Buttons
+		// Debounce the buttons
 		leftTop[0].Debounce();
 		leftTop[1].Debounce();
 		rightTop[0].Debounce();
@@ -237,7 +239,7 @@ int main(void)
 
 		isLeftRight = leftRightButton.Pressed();
 
-		// Ultrasonic sensors
+		// Read ultrasonic sensors distances
 		distancePitch = sensors[!isLeftRight].getDistanceFiltered(0.5f, 6000U); // 6k microsec timeout ~ 1200 mm
 		pitchDistanceSmoothing.setTargetValue(distancePitch < 0.f ? 0.f : distancePitch);
 
@@ -248,11 +250,11 @@ int main(void)
 	
 		daisy::System::Delay(5);
 
-		// LEDs
+		// Update the LEDs
 		pitchClipLed.Write(distancePitch > mapping::MAX_DISTANCE || distancePitch < 0);
 		volumeClipLed.Write(distanceVolume > mapping::MAX_DISTANCE || distanceVolume < 0);
 
-		// Knobs
+		// Read values of the knobs and udpate each smoothing's target value to the new readings
     	masterVolumeSmoothing.setTargetValue(leftMiddle[isLeftRight].Pressed() ? 0.f : hw.adc.GetFloat(0));
 		intervalsVolumeSmoothing.setTargetValue(mapping::intervalVolumeScaled(hw.adc.GetFloat(1)));
 		anchorsSizeSmoothing.setTargetValue(mapping::anchorsSizeScaled(hw.adc.GetFloat(2))); 

@@ -1,5 +1,6 @@
 #pragma once
 
+/// @brief Simple oscillator class implementation
 class Oscillator {
 public:
 	Oscillator() = default;
@@ -10,6 +11,8 @@ public:
 
 	float getPhase() const { return phase; }
 
+	/// @brief Updates the internal phase of the oscillator and returns it.
+	/// @return Current phase of the oscillator
 	float getNextPhaseValue(){
 		phase += step; // for each sample increment the phase
 
