@@ -2,7 +2,7 @@
 #include "Oscillator.h"
 #include <cmath>
 
-/// FrequencyModulation based synthesizer. Implementation based on the paper
+/// @brief FrequencyModulation based synthesizer. Implementation based on the paper
 /// "The Simulation of Natural Instrument Tones using Frequency Modulation with a Complex Modulating Wave
 /// by  Bill Schottstaedt
 class SinusoidSynth {
@@ -15,25 +15,31 @@ public:
 	SinusoidSynth(HarmonyRatio ratio = {1.f, 1.f}) : harmonyRatio(ratio) {};
 	~SinusoidSynth() = default;
 
-	/// Resets Synth's internal oscillator phases to given value
+	/// @brief Resets Synth's internal oscillator phases to given value
+	/// @param startPhase Internal oscillator phases will be set to this value 
 	void reset(const float startPhase);
 
-	/// Sets the base carrier frequency and updates internal values accordingly
+	/// @brief Sets the base carrier frequency and updates internal values accordingly
+	/// @param carrierFrequency The new carrier frequency
 	void setCarrierFrequency(const float carrierFrequency);
 
-	/// Sets the sample rate and updates internal values accordingly
+	/// @brief Sets the sample rate and updates internal values accordingly
+	/// @param sampleRate The new sample rete
 	void setSampleRate(const float sampleRate);
 
-	/// Returns current synthesised value. This function is meant to be run every sample during processing. Automatically updates internal oscillators.
+	/// @brief Returns current synthesised value. This function is meant to be run every sample during processing. Automatically updates internal oscillators.
+	/// @return Next sample
 	float getNextValue();
 
-	/// Returns current value of carrier's phase
+	/// @brief Returns current value of carrier's phase
 	float getCarrierPhase() const { return carrierOsc.getPhase(); }
 
-	/// Tells synth that it is in attack phase and should scale the output for x miliseconds according to internal envolpe
+	/// @brief Tells synth that it is in attack phase and should scale the output for x miliseconds according to internal envolpe
+	/// @param miliseconds The length of the attack phase
 	void startAttackPhase(const float miliseconds = 10);
 
-	/// Tells synth that it is in decay phase and should scale the output for x miliseconds according to internal envolpe
+	/// @brief Tells synth that it is in decay phase and should scale the output for x miliseconds according to internal envolpe
+	/// @param miliseconds The length of the decay phase
 	void startDecayPhase(const float miliseconds = 10);
 
 private:
